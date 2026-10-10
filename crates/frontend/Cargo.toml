@@ -1,0 +1,16 @@
+[package]
+name = "frontend"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+backend = { path = "../backend" }
+contracts = { path = "../contracts" }
+iced.workspace = true
+iced_widget.workspace = true
+iced_aw.workspace = true
+lucide-icons.workspace = true
+directories.workspace = true
+time.workspace = true
+rust_decimal.workspace = true
+uuid.workspace = true

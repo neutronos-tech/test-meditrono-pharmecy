@@ -1,0 +1,21 @@
+[package]
+name = "backend"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+contracts = { path = "../contracts" }
+rusqlite.workspace = true
+uuid.workspace = true
+time.workspace = true
+thiserror.workspace = true
+rust_decimal.workspace = true
+argon2.workspace = true
+rand_core.workspace = true
+csv.workspace = true
+reqwest.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

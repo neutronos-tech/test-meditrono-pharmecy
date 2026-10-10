@@ -1,0 +1,10 @@
+[package]
+name = "contracts"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+uuid.workspace = true
+serde.workspace = true
+time.workspace = true
+rust_decimal.workspace = true

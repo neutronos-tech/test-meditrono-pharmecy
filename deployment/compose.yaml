@@ -1,0 +1,16 @@
+name: pharmacy-cloud
+
+services:
+  server:
+    image: ${PHARMACY_IMAGE:?PHARMACY_IMAGE must be set}
+    container_name: pharmacy-cloud
+    restart: unless-stopped
+    env_file:
+      - ./server.env
+    networks:
+      - meditrono
+
+networks:
+  meditrono:
+    external: true
+    name: meditrono_default

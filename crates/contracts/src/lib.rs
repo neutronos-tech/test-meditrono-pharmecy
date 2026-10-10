@@ -1,0 +1,9 @@
+pub mod auth;
+pub mod catalog;
+pub mod dashboard;
+pub mod history;
+pub mod inventory;
+pub mod purchase;
+pub mod sale;
+pub mod stock;
+pub mod sync;

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pharmacy</title></head>
+<body>
+  <main>
+    <h1>Pharmacy</h1>
+    <p>Welcome, {{ username }}.</p>
+    <p>Medicine catalogue available</p>
+    <p>Synchronization account active</p>
+    <button id="logout">Sign out</button>
+  </main>
+  <script>
+    const cookie = (name) => document.cookie.split('; ').find((part) => part.startsWith(name + '='))?.split('=').slice(1).join('=');
+    document.querySelector('#logout').addEventListener('click', async () => {
+      await fetch('/logout', { method: 'POST', headers: { 'X-CSRF-Token': cookie('pharmacy_csrf') ?? '' } });
+      location.assign('/login');
+    });
+  </script>
+</body>
+</html>

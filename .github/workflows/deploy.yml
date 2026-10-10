@@ -1,0 +1,232 @@
+name: Production deployment
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Verify before publishing
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  publish:
+    name: Build and publish immutable image
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Define GHCR image name
+        id: image
+        shell: bash
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/pharmacy-cloud" >> "$GITHUB_OUTPUT"
+
+      - name: Sign in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deployment/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.image.outputs.image }}:${{ github.sha }}
+          cache-from: type=gha,scope=pharmacy-cloud
+          cache-to: type=gha,mode=max,scope=pharmacy-cloud
+
+  deploy:
+    name: Deploy and health-check production
+    needs: publish
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://pharmacy.meditrono.duckdns.org
+    permissions:
+      contents: read
+    env:
+      PROD_HOST: ${{ secrets.PROD_HOST }}
+      PROD_USER: ${{ secrets.PROD_USER }}
+      PROD_SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+      PROD_KNOWN_HOSTS: ${{ secrets.PROD_KNOWN_HOSTS }}
+      PROD_GHCR_USER: ${{ secrets.PROD_GHCR_USER }}
+      PROD_GHCR_TOKEN: ${{ secrets.PROD_GHCR_TOKEN }}
+      PHARMACY_IMAGE: ${{ needs.publish.outputs.image }}@${{ needs.publish.outputs.digest }}
+    steps:
+      - name: Check out deployment configuration
+        uses: actions/checkout@v4
+
+      - name: Prepare pinned SSH identity and host key
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${PROD_HOST:?Set the production environment secret PROD_HOST}"
+          : "${PROD_USER:?Set the production environment secret PROD_USER}"
+          : "${PROD_SSH_PRIVATE_KEY:?Set PROD_SSH_PRIVATE_KEY}"
+          : "${PROD_KNOWN_HOSTS:?Set PROD_KNOWN_HOSTS from a trusted host-key source}"
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$PROD_SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$PROD_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/id_ed25519" >/dev/null
+          ssh-keygen -F "$PROD_HOST" -f "$HOME/.ssh/known_hosts" >/dev/null
+
+      - name: Authenticate VPS Docker client to private GHCR package
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${PROD_GHCR_USER:-}" && -z "${PROD_GHCR_TOKEN:-}" ]]; then
+            echo 'GHCR package is public; skipping VPS registry login.'
+            exit 0
+          fi
+          : "${PROD_GHCR_USER:?Set both PROD_GHCR_USER and PROD_GHCR_TOKEN for a private GHCR package}"
+          : "${PROD_GHCR_TOKEN:?Set both PROD_GHCR_USER and PROD_GHCR_TOKEN for a private GHCR package}"
+          printf -v quoted_user '%q' "$PROD_GHCR_USER"
+          printf '%s' "$PROD_GHCR_TOKEN" | ssh -i "$HOME/.ssh/id_ed25519" \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            "$PROD_USER@$PROD_HOST" \
+            "docker login ghcr.io --username $quoted_user --password-stdin"
+
+      - name: Ensure deployment directory exists and stage Compose file
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="$PROD_USER@$PROD_HOST"
+          ssh -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            "$target" 'mkdir -p /opt/pharmacy-cloud'
+          scp -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            deployment/compose.yaml \
+            "$target:/tmp/pharmacy-cloud-compose-${GITHUB_SHA}.yaml"
+
+      - name: Pull and replace server container
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$PHARMACY_IMAGE" =~ ^ghcr\.io/[a-z0-9_.-]+/pharmacy-cloud@sha256:[a-f0-9]{64}$ ]]
+          target="$PROD_USER@$PROD_HOST"
+          previous_image="$(ssh -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            "$target" "bash -s -- '$PHARMACY_IMAGE' '$GITHUB_SHA'" <<'REMOTE'
+          set -euo pipefail
+          new_image="$1"
+          revision="$2"
+          deploy_dir=/opt/pharmacy-cloud
+          cd "$deploy_dir"
+
+          test -f server.env || { echo 'Missing manually configured /opt/pharmacy-cloud/server.env' >&2; exit 1; }
+          install -m 0644 "/tmp/pharmacy-cloud-compose-${revision}.yaml" compose.yaml
+          rm -f "/tmp/pharmacy-cloud-compose-${revision}.yaml"
+
+          previous_image="$(docker inspect --format '{{.Config.Image}}' pharmacy-cloud 2>/dev/null || true)"
+          test -n "$previous_image" || { echo 'Cannot determine the currently deployed image for rollback' >&2; exit 1; }
+
+          docker pull "$new_image" >&2
+          printf 'PHARMACY_IMAGE=%s\n' "$new_image" > image.env.tmp
+          chmod 0644 image.env.tmp
+          mv image.env.tmp image.env
+
+          if ! docker compose --env-file image.env -f compose.yaml up -d --no-deps server >&2; then
+            printf 'PHARMACY_IMAGE=%s\n' "$previous_image" > image.env.tmp
+            mv image.env.tmp image.env
+            docker compose --env-file image.env -f compose.yaml up -d --no-deps server >&2 || true
+            exit 1
+          fi
+
+          printf '%s\n' "$previous_image"
+          REMOTE
+          )"
+          printf 'previous_image=%s\n' "$previous_image" >> "$GITHUB_OUTPUT"
+
+      - name: Check public production health
+        id: health
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --max-time 5 https://pharmacy.meditrono.duckdns.org/health >/dev/null; then
+              ready=1
+              echo 'Production health endpoint is healthy.'
+              break
+            fi
+            echo "Health check attempt ${attempt}/30 has not passed yet."
+            sleep 2
+          done
+          if [[ "$ready" -ne 1 ]]; then
+            echo 'Production health check failed.' >&2
+            exit 1
+          fi
+
+      - name: Show server logs after failed health check
+        if: ${{ steps.health.outcome == 'failure' }}
+        shell: bash
+        run: |
+          ssh -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            "$PROD_USER@$PROD_HOST" \
+            'cd /opt/pharmacy-cloud && docker compose --env-file image.env -f compose.yaml logs --tail=150 server' || true
+
+      - name: Roll back failed release
+        if: ${{ steps.health.outcome == 'failure' }}
+        env:
+          PREVIOUS_IMAGE: ${{ steps.deploy.outputs.previous_image }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${PREVIOUS_IMAGE:?No previous image reference was captured; cannot roll back automatically}"
+          ssh -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            "$PROD_USER@$PROD_HOST" "bash -s -- '$PREVIOUS_IMAGE'" <<'REMOTE'
+          set -euo pipefail
+          previous_image="$1"
+          cd /opt/pharmacy-cloud
+          if ! docker image inspect "$previous_image" >/dev/null 2>&1; then
+            docker pull "$previous_image"
+          fi
+          printf 'PHARMACY_IMAGE=%s\n' "$previous_image" > image.env.tmp
+          chmod 0644 image.env.tmp
+          mv image.env.tmp image.env
+          docker compose --env-file image.env -f compose.yaml up -d --no-deps server
+          REMOTE
+
+      - name: Fail deployment after rollback
+        if: ${{ steps.health.outcome == 'failure' }}
+        run: exit 1

@@ -1,0 +1,42 @@
+[workspace]
+members = ["crates/contracts", "crates/backend", "crates/frontend", "crates/server"]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+
+[workspace.dependencies]
+uuid = { version = "1", features = ["v7", "serde"] }
+serde = { version = "1", features = ["derive"] }
+time = { version = "0.3", features = ["serde", "macros", "formatting", "parsing"] }
+thiserror = "2"
+rusqlite = { version = "0.37", features = ["bundled"] }
+rust_decimal = { version = "1", features = ["serde"] }
+argon2 = "0.5"
+rand_core = { version = "0.6", features = ["getrandom"] }
+rand = "0.8"
+sha2 = "0.10"
+base64 = "0.22"
+csv = "1"
+tempfile = "3"
+
+iced = { version = "0.14.0", features = ["svg", "tokio"] }
+iced_widget = "0.14.2"
+iced_aw = { version = "0.14.1", default-features = false, features = ["number_input", "date_picker", "selection_list", "badge", "card", "spinner", "wrap"] }
+lucide-icons = { version = "1.52.0", features = ["iced"] }
+directories = "6"
+
+axum = "0.8"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }
+# SQLx PostgreSQL driver directly avoids sqlx-sqlite native-link conflict with rusqlite.
+sqlx-core = { version = "=0.8.6", features = ["_rt-tokio", "_tls-rustls-ring-webpki"] }
+sqlx-postgres = { version = "=0.8.6", features = ["uuid", "time", "rust_decimal"] }
+askama = "0.14"
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tower-http = { version = "0.6", features = ["trace"] }
+futures-util = "0.3"
+async-stream = "0.3"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "json"] }
