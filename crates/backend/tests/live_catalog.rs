@@ -14,13 +14,6 @@ struct Live {
 }
 
 async fn connect() -> Option<Live> {
-    let (Ok(username), Ok(password)) = (
-        std::env::var("PHARMACY_TEST_USERNAME"),
-        std::env::var("PHARMACY_TEST_PASSWORD"),
-    ) else {
-        eprintln!("SKIPPED: PHARMACY_TEST_USERNAME/PASSWORD not set");
-        return None;
-    };
     let base = std::env::var("PHARMACY_API_BASE_URL")
         .unwrap_or_else(|_| "https://pharmacy.neutorium.com".into());
     let health = reqwest::Client::builder()
@@ -34,7 +27,18 @@ async fn connect() -> Option<Live> {
         eprintln!("SKIPPED: server not reachable at {base}");
         return None;
     }
-    let client = ServerClient::new();
+    let client = ServerClient::with_base_url(base);
+    // A developer token (debug server only) skips the password login.
+    if let Ok(token) = std::env::var("PHARMACY_TEST_TOKEN") {
+        return Some(Live { client, token });
+    }
+    let (Ok(username), Ok(password)) = (
+        std::env::var("PHARMACY_TEST_USERNAME"),
+        std::env::var("PHARMACY_TEST_PASSWORD"),
+    ) else {
+        eprintln!("SKIPPED: PHARMACY_TEST_TOKEN or PHARMACY_TEST_USERNAME/PASSWORD not set");
+        return None;
+    };
     let login = client
         .login(username, password)
         .await

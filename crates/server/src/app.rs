@@ -13,6 +13,8 @@ use uuid::Uuid;
 #[derive(Clone)]
 pub struct AppState {
     pub pool: PgPool,
+    #[cfg(debug_assertions)]
+    dev_token_hash: Option<[u8; 32]>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -51,13 +53,44 @@ pub enum AuthenticateError {
 }
 
 impl AppState {
+    pub fn from_pool(pool: PgPool) -> Self {
+        Self {
+            pool,
+            #[cfg(debug_assertions)]
+            dev_token_hash: None,
+        }
+    }
+
+    /// Debug builds only: accept `token` as a bearer for the fixed developer
+    /// account, creating that account if needed. Release builds have no such method.
+    #[cfg(debug_assertions)]
+    pub async fn enable_dev_token(&mut self, token: &str) -> Result<(), String> {
+        if token.len() < contracts::auth::dev::MIN_TOKEN_LEN {
+            return Err(format!(
+                "{} must be at least {} characters",
+                contracts::auth::dev::TOKEN_ENV,
+                contracts::auth::dev::MIN_TOKEN_LEN
+            ));
+        }
+        // '!' is not a valid password hash, so password login can never succeed for this account.
+        query("INSERT INTO pharmacies(id,username,password_hash) VALUES($1,$2,'!') ON CONFLICT (id) DO NOTHING")
+            .bind(contracts::auth::dev::ACCOUNT_ID)
+            .bind(contracts::auth::dev::USERNAME)
+            .execute(&self.pool)
+            .await
+            .map_err(|error| format!("could not create the developer account: {error}"))?;
+        self.dev_token_hash = Some(hash_secret(token));
+        tracing::warn!("developer token enabled (debug build only)");
+        Ok(())
+    }
+
     pub async fn connect(database_url: &str) -> Result<Self, sqlx_core::error::Error> {
         let pool = PgPoolOptions::new()
             .max_connections(10)
             .acquire_timeout(Duration::from_secs(5))
             .connect(database_url)
             .await?;
-        Ok(Self { pool })
+        Ok(Self::from_pool(pool))
     }
 
     pub async fn bootstrap_pharmacy(&self, username: &str, password: &str) -> Result<(), String> {
@@ -140,6 +173,15 @@ impl AppState {
         &self,
         token: &str,
     ) -> Result<PharmacyAccount, AuthenticateError> {
+        #[cfg(debug_assertions)]
+        if let Some(expected) = self.dev_token_hash
+            && constant_time_eq(&hash_secret(token), &expected)
+        {
+            return Ok(PharmacyAccount {
+                id: contracts::auth::dev::ACCOUNT_ID,
+                username: contracts::auth::dev::USERNAME.into(),
+            });
+        }
         let row = query("SELECT p.id,p.username FROM pharmacy_sessions s JOIN pharmacies p ON p.id=s.pharmacy_id WHERE s.token_hash=$1 AND s.expires_at>now() AND p.active=TRUE")
             .bind(hash_secret(token).to_vec())
             .fetch_optional(&self.pool)

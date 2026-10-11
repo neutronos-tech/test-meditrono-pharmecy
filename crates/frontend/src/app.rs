@@ -19,6 +19,23 @@ const QUALIFIER: &str = "com";
 const ORGANIZATION: &str = "Pharmacy";
 const APPLICATION: &str = "Pharmacy";
 
+/// Debug builds only: when `PHARMACY_DEV_TOKEN` is set and nothing is saved,
+/// remember the developer account so the app skips the login screen.
+#[cfg(debug_assertions)]
+fn seed_dev_login(mut backend: Backend) -> Backend {
+    use contracts::auth::dev;
+    if let (Ok(token), Ok(None)) = (std::env::var(dev::TOKEN_ENV), backend.saved_remote_auth()) {
+        let _ = backend.save_remote_auth(&PharmacyLoginResponse {
+            pharmacy: PharmacyAccount {
+                id: dev::ACCOUNT_ID,
+                username: dev::USERNAME.into(),
+            },
+            session_token: token,
+        });
+    }
+    backend
+}
+
 fn database_path() -> Result<PathBuf, String> {
     let dirs = directories::ProjectDirs::from(QUALIFIER, ORGANIZATION, APPLICATION)
         .ok_or("Could not locate an application data directory.")?;
@@ -89,6 +106,8 @@ impl App {
             Backend::open(path)
                 .map_err(|_| "Could not open the local pharmacy database.".to_string())
         });
+        #[cfg(debug_assertions)]
+        let backend = backend.map(seed_dev_login);
         Self::with_parts(backend, ServerClient::new())
     }
 

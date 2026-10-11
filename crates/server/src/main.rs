@@ -4,6 +4,10 @@ mod error;
 mod http;
 mod route;
 mod sync;
+#[cfg(test)]
+mod test_support;
+#[cfg(test)]
+mod tests;
 
 use app::AppState;
 
@@ -14,9 +18,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let address: std::net::SocketAddr = std::env::var("ADDR")
         .unwrap_or_else(|_| "127.0.0.1:3001".into())
         .parse()?;
-    let app = AppState::connect(&database_url)
+    #[cfg_attr(not(debug_assertions), allow(unused_mut))]
+    let mut app = AppState::connect(&database_url)
         .await
         .map_err(|_| "Could not connect to PostgreSQL")?;
+    #[cfg(debug_assertions)]
+    if let Ok(token) = std::env::var(contracts::auth::dev::TOKEN_ENV) {
+        app.enable_dev_token(&token).await?;
+    }
     if std::env::args().nth(1).as_deref() == Some("create-pharmacy") {
         let username = std::env::var("PHARMACY_BOOTSTRAP_USERNAME")?;
         let password = std::env::var("PHARMACY_BOOTSTRAP_PASSWORD")?;

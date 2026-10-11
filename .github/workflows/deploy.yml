@@ -152,8 +152,8 @@ jobs:
           install -m 0644 "/tmp/pharmacy-cloud-compose-${revision}.yaml" compose.yaml
           rm -f "/tmp/pharmacy-cloud-compose-${revision}.yaml"
 
+          # Empty on the very first deploy, when there is nothing to roll back to.
           previous_image="$(docker inspect --format '{{.Config.Image}}' pharmacy-cloud 2>/dev/null || true)"
-          test -n "$previous_image" || { echo 'Cannot determine the currently deployed image for rollback' >&2; exit 1; }
 
           docker pull "$new_image" >&2
           printf 'PHARMACY_IMAGE=%s\n' "$new_image" > image.env.tmp
