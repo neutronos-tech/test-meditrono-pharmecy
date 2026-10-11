@@ -14,3 +14,6 @@ directories.workspace = true
 time.workspace = true
 rust_decimal.workspace = true
 uuid.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

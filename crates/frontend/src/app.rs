@@ -85,10 +85,20 @@ impl std::fmt::Debug for LoginResult {
 
 impl App {
     pub fn boot() -> (Self, Task<Message>) {
-        let (backend, saved_auth, fatal_error) = match database_path().and_then(|path| {
+        let backend = database_path().and_then(|path| {
             Backend::open(path)
                 .map_err(|_| "Could not open the local pharmacy database.".to_string())
-        }) {
+        });
+        Self::with_parts(backend, ServerClient::new())
+    }
+
+    /// Everything `boot` does once the database is open. Tests call this with a
+    /// temporary database and a client pointed at their own server.
+    pub(crate) fn with_parts(
+        backend: Result<Backend, String>,
+        server: ServerClient,
+    ) -> (Self, Task<Message>) {
+        let (backend, saved_auth, fatal_error) = match backend {
             Ok(db) => match db.saved_remote_auth() {
                 Ok(auth) => (Some(db), auth, None),
                 Err(_) => (
@@ -101,7 +111,7 @@ impl App {
         };
         let mut app = Self {
             backend,
-            server: ServerClient::new(),
+            server,
             saved_auth: None,
             authenticated_pharmacy: None,
             catalog_ready: false,
@@ -517,5 +527,210 @@ impl App {
             .into()
         })
         .into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use contracts::{
+        auth::{PharmacyAccount, PharmacyLoginResponse},
+        catalog::{MedicineCatalogItem, MedicineChange},
+    };
+    use tempfile::TempDir;
+    use uuid::Uuid;
+
+    fn medicine(name: &str) -> MedicineCatalogItem {
+        MedicineCatalogItem {
+            id: Uuid::now_v7(),
+            name: name.into(),
+            generic_name: Some("Paracetamol".into()),
+            strength: None,
+            dosage_form: None,
+            manufacturer: None,
+            package_description: None,
+            reference_price: None,
+            active: true,
+        }
+    }
+
+    fn login() -> PharmacyLoginResponse {
+        PharmacyLoginResponse {
+            pharmacy: PharmacyAccount {
+                id: Uuid::now_v7(),
+                username: "sample pharmacy".into(),
+            },
+            session_token: "test-token".into(),
+        }
+    }
+
+    /// An app over a fresh database. `seed` runs before the app starts, so a
+    /// test can pre-load a saved login or an existing local catalog.
+    fn boot_app(seed: impl FnOnce(&mut Backend)) -> (App, TempDir) {
+        let dir = tempfile::tempdir().unwrap();
+        let mut backend = Backend::open(dir.path().join("pharmacy.db")).unwrap();
+        seed(&mut backend);
+        let (app, _task) = App::with_parts(Ok(backend), ServerClient::new());
+        (app, dir)
+    }
+
+    /// Plays the remembered-login check that `boot` would start.
+    fn sign_in(app: &mut App) {
+        let saved = app
+            .backend
+            .as_ref()
+            .unwrap()
+            .saved_remote_auth()
+            .unwrap()
+            .unwrap();
+        let pharmacy = saved.pharmacy.clone();
+        let _ = app.update(Message::RememberedLoginChecked(saved, Ok(pharmacy)));
+    }
+
+    fn backend(app: &App) -> &Backend {
+        app.backend.as_ref().unwrap()
+    }
+
+    #[test]
+    fn fresh_install_downloads_catalog_then_becomes_ready() {
+        let (mut app, _dir) = boot_app(|db| db.save_remote_auth(&login()).unwrap());
+        sign_in(&mut app);
+        assert!(app.catalog_loading);
+        assert!(!app.catalog_ready);
+
+        let _ = app.update(Message::FullMedicinesDownloaded(Ok(FullMedicineDownload {
+            revision: 3,
+            total: 2,
+            medicines: vec![medicine("Napa"), medicine("Ace")],
+        })));
+        assert_eq!(app.catalog_total, Some(2));
+        assert!(app.catalog_loading, "changes are still to be applied");
+
+        let _ = app.update(Message::MedicineChangesDownloaded(Ok(
+            MedicineChangesDownload {
+                revision: 3,
+                changes: Vec::new(),
+            },
+        )));
+        assert!(app.catalog_ready);
+        assert!(!app.catalog_loading);
+        assert!(app.catalog_error.is_none());
+        assert_eq!(backend(&app).medicine_revision().unwrap(), 3);
+        assert_eq!(backend(&app).search_medicines("Napa", 10).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn offline_first_run_without_local_catalog_blocks_navigation() {
+        let (mut app, _dir) = boot_app(|db| db.save_remote_auth(&login()).unwrap());
+        sign_in(&mut app);
+        let _ = app.update(Message::FullMedicinesDownloaded(Err(
+            RemoteError::Unavailable,
+        )));
+        assert_eq!(
+            app.catalog_error.as_deref(),
+            Some("Could not load the medicine database.")
+        );
+        assert!(!app.catalog_ready);
+
+        let _ = app.update(Message::Navigate(Route::Catalog));
+        assert_eq!(app.route, Route::Dashboard);
+    }
+
+    #[test]
+    fn offline_with_local_catalog_keeps_working_and_says_so() {
+        let (mut app, _dir) = boot_app(|db| {
+            db.save_remote_auth(&login()).unwrap();
+            db.import_medicine_catalog(vec![medicine("Napa")], 2)
+                .unwrap();
+        });
+        sign_in(&mut app);
+        assert!(app.catalog_loading);
+
+        let _ = app.update(Message::MedicineChangesDownloaded(Err(
+            RemoteError::Unavailable,
+        )));
+        assert!(app.catalog_ready);
+        assert_eq!(
+            app.connection_error.as_deref(),
+            Some("Could not check medicine updates. Using local data.")
+        );
+        let _ = app.update(Message::Navigate(Route::Catalog));
+        assert_eq!(app.route, Route::Catalog);
+    }
+
+    #[test]
+    fn server_changes_rename_and_deactivate_local_medicines() {
+        let napa = medicine("Napa");
+        let id = napa.id;
+        let (mut app, _dir) = boot_app(move |db| {
+            db.save_remote_auth(&login()).unwrap();
+            db.import_medicine_catalog(vec![napa], 2).unwrap();
+        });
+        sign_in(&mut app);
+
+        let mut renamed = medicine("Napa Extra");
+        renamed.id = id;
+        let _ = app.update(Message::MedicineChangesDownloaded(Ok(
+            MedicineChangesDownload {
+                revision: 4,
+                changes: vec![MedicineChange {
+                    revision: 4,
+                    medicine: renamed,
+                }],
+            },
+        )));
+        assert!(app.catalog_ready);
+        assert_eq!(backend(&app).medicine_revision().unwrap(), 4);
+        assert_eq!(backend(&app).search_medicines("Napa", 10).unwrap().len(), 1);
+        assert_eq!(
+            backend(&app).search_medicines("Extra", 10).unwrap().len(),
+            1
+        );
+    }
+
+    #[test]
+    fn unauthorized_during_download_signs_out() {
+        let (mut app, _dir) = boot_app(|db| db.save_remote_auth(&login()).unwrap());
+        sign_in(&mut app);
+        let _ = app.update(Message::FullMedicinesDownloaded(Err(
+            RemoteError::Unauthorized,
+        )));
+        assert!(app.saved_auth.is_none());
+        assert!(app.authenticated_pharmacy.is_none());
+        assert!(!app.catalog_ready);
+        assert!(backend(&app).saved_remote_auth().unwrap().is_none());
+    }
+
+    #[test]
+    fn catalog_and_purchase_search_run_through_messages() {
+        let (mut app, _dir) = boot_app(|db| {
+            db.save_remote_auth(&login()).unwrap();
+            db.import_medicine_catalog(vec![medicine("Napa"), medicine("Ace")], 1)
+                .unwrap();
+        });
+        sign_in(&mut app);
+        let _ = app.update(Message::MedicineChangesDownloaded(Ok(
+            MedicineChangesDownload {
+                revision: 1,
+                changes: Vec::new(),
+            },
+        )));
+        assert!(app.catalog_ready);
+
+        let _ = app.update(Message::Catalog(catalog::Message::MedicineQuery(
+            "nap".into(),
+        )));
+        let names: Vec<&str> = app
+            .catalog
+            .medicines
+            .iter()
+            .map(|m| m.name.as_str())
+            .collect();
+        assert_eq!(names, ["Napa"]);
+
+        let _ = app.update(Message::Purchase(purchase::Message::MedicineQuery(
+            String::new(),
+        )));
+        assert_eq!(app.purchase.medicine_results.len(), 2);
     }
 }

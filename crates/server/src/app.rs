@@ -206,15 +206,21 @@ impl AppState {
         Ok(())
     }
 
-    pub async fn medicine_catalog(
+    /// One keyset page of the catalog, ordered by id. `after` is the last id
+    /// of the previous page (None for the first page).
+    pub async fn medicine_page(
         &self,
+        after: Option<Uuid>,
+        limit: i64,
     ) -> Result<(u64, u64, Vec<MedicineCatalogItem>), sqlx_core::error::Error> {
         let revision = self.medicine_revision().await?;
         let count: i64 = query("SELECT COUNT(*) AS count FROM medicine_catalog")
             .fetch_one(&self.pool)
             .await?
             .try_get("count")?;
-        let rows = query("SELECT id,brand_name,generic_name,strength,dosage_form,manufacturer,package_description,reference_price_paisa,is_active FROM medicine_catalog ORDER BY id")
+        let rows = query("SELECT id,brand_name,generic_name,strength,dosage_form,manufacturer,package_description,reference_price_paisa,is_active FROM medicine_catalog WHERE ($1::uuid IS NULL OR id > $1) ORDER BY id LIMIT $2")
+            .bind(after)
+            .bind(limit)
             .fetch_all(&self.pool)
             .await?;
         let medicines = rows

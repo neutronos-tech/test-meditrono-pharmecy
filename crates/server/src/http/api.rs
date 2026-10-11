@@ -11,6 +11,7 @@ use contracts::{
 };
 use futures_util::stream;
 use serde::Deserialize;
+use uuid::Uuid;
 
 pub use crate::auth::api::{login, logout, me};
 
@@ -37,8 +38,21 @@ fn ndjson_headers(revision: u64, count: Option<u64>) -> Result<HeaderMap, AppErr
     Ok(headers)
 }
 
-pub async fn full_medicines(State(app): State<AppState>) -> Result<Response, AppError> {
-    let (revision, count, medicines) = app.medicine_catalog().await.map_err(AppError::Database)?;
+#[derive(Deserialize)]
+pub struct PageQuery {
+    after: Option<Uuid>,
+    limit: Option<u32>,
+}
+
+pub async fn full_medicines(
+    State(app): State<AppState>,
+    Query(page): Query<PageQuery>,
+) -> Result<Response, AppError> {
+    let limit = page.limit.unwrap_or(2000).clamp(1, 5000);
+    let (revision, count, medicines) = app
+        .medicine_page(page.after, i64::from(limit))
+        .await
+        .map_err(AppError::Database)?;
     let headers = ndjson_headers(revision, Some(count))?;
     let lines = medicines.into_iter().map(|medicine| {
         let mut bytes = serde_json::to_vec(&medicine).map_err(std::io::Error::other)?;

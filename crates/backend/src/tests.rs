@@ -647,3 +647,89 @@ fn existing_version_one_database_migrates_to_medicine_revision() {
     );
     assert_eq!(backend.medicine_revision().unwrap(), 0);
 }
+
+#[test]
+fn search_matches_brand_and_generic_names_ignoring_ascii_case() {
+    let (_, mut db, _) = setup();
+    db.import_medicine_catalog(vec![global_medicine(Uuid::now_v7(), "Napa")], 1)
+        .unwrap();
+    assert_eq!(db.search_medicines("nap", 10).unwrap().len(), 1);
+    assert_eq!(db.search_medicines("PARAC", 10).unwrap().len(), 1);
+    assert!(db.search_medicines("zzz", 10).unwrap().is_empty());
+}
+
+#[test]
+fn search_orders_by_name_and_honors_limit() {
+    let (_, mut db, _) = setup();
+    let medicines = ["Cetirizine", "Ace", "Bisoprolol"]
+        .into_iter()
+        .map(|name| global_medicine(Uuid::now_v7(), name))
+        .collect();
+    db.import_medicine_catalog(medicines, 1).unwrap();
+    let names: Vec<String> = db
+        .search_medicines("", 2)
+        .unwrap()
+        .into_iter()
+        .map(|medicine| medicine.name)
+        .collect();
+    assert_eq!(names, ["Ace", "Bisoprolol"]);
+}
+
+#[test]
+fn search_hides_medicines_deactivated_by_changes() {
+    let (_, mut db, _) = setup();
+    let id = Uuid::now_v7();
+    db.import_medicine_catalog(vec![global_medicine(id, "Napa")], 1)
+        .unwrap();
+    let mut retired = global_medicine(id, "Napa");
+    retired.active = false;
+    db.apply_medicine_changes(
+        vec![contracts::catalog::MedicineChange {
+            revision: 2,
+            medicine: retired,
+        }],
+        2,
+    )
+    .unwrap();
+    assert!(db.search_medicines("Napa", 10).unwrap().is_empty());
+}
+
+#[test]
+fn search_includes_locally_created_medicines() {
+    let (_, mut db, pharmacy) = setup();
+    db.create_medicine(
+        &pharmacy,
+        CreateMedicineInput {
+            name: "Local Syrup".into(),
+        },
+    )
+    .unwrap();
+    assert_eq!(db.search_medicines("Syrup", 10).unwrap().len(), 1);
+}
+
+#[test]
+fn search_finds_rows_in_a_large_import() {
+    let (_, mut db, _) = setup();
+    let medicines = (0..5000u32)
+        .map(|index| global_medicine(Uuid::now_v7(), &format!("Brand {index:05}")))
+        .collect();
+    db.import_medicine_catalog(medicines, 1).unwrap();
+    assert_eq!(db.search_medicines("Brand 04999", 10).unwrap().len(), 1);
+    assert_eq!(db.search_medicines("Brand", 100).unwrap().len(), 100);
+}
+
+/// Known gap: user input is not escaped, so `%` and `_` act as LIKE wildcards.
+/// This test pins the current behaviour until escaping is added.
+#[test]
+fn search_currently_treats_like_wildcards_in_input_as_wildcards() {
+    let (_, mut db, _) = setup();
+    db.import_medicine_catalog(
+        vec![
+            global_medicine(Uuid::now_v7(), "Napa"),
+            global_medicine(Uuid::now_v7(), "Ace"),
+        ],
+        1,
+    )
+    .unwrap();
+    assert_eq!(db.search_medicines("%", 10).unwrap().len(), 2);
+}

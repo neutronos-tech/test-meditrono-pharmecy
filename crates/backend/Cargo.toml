@@ -13,7 +13,8 @@ rust_decimal.workspace = true
 argon2.workspace = true
 rand_core.workspace = true
 csv.workspace = true
-reqwest.workspace = true
+reqwest = { workspace = true, features = ["gzip"] }
+tokio = { workspace = true, features = ["time"] }
 serde_json.workspace = true
 serde.workspace = true
 
