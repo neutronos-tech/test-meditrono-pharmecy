@@ -5,15 +5,26 @@
   <main>
     <h1>Pharmacy</h1>
     <p>Welcome, {{ username }}.</p>
-    <p>Medicine catalogue available</p>
-    <p>Synchronization account active</p>
-    <button id="logout">Sign out</button>
+    <button id="logout" type="button">Sign out</button>
+    <p id="logout-error" role="alert" hidden></p>
   </main>
   <script>
     const cookie = (name) => document.cookie.split('; ').find((part) => part.startsWith(name + '='))?.split('=').slice(1).join('=');
-    document.querySelector('#logout').addEventListener('click', async () => {
-      await fetch('/logout', { method: 'POST', headers: { 'X-CSRF-Token': cookie('pharmacy_csrf') ?? '' } });
-      location.assign('/login');
+    const logout = document.querySelector('#logout');
+    const logoutError = document.querySelector('#logout-error');
+    logout.addEventListener('click', async () => {
+      logout.disabled = true;
+      logoutError.hidden = true;
+      try {
+        const response = await fetch('/logout', { method: 'POST', headers: { 'X-CSRF-Token': cookie('pharmacy_csrf') ?? '' } });
+        if (!response.ok) throw new Error(`Sign-out failed with status ${response.status}`);
+        location.replace('/login');
+      } catch (error) {
+        console.error(error);
+        logoutError.textContent = 'Could not sign out. You are still signed in; please try again.';
+        logoutError.hidden = false;
+        logout.disabled = false;
+      }
     });
   </script>
 </body>
