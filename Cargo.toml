@@ -40,3 +40,9 @@ tower-http = { version = "0.6", features = ["trace"] }
 futures-util = "0.3"
 async-stream = "0.3"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "json"] }
+
+# iced_aw 0.14.1 on crates.io also builds as a cdylib, which overflows the PE
+# export-ordinal limit when linking with MinGW (windows-gnu). This upstream commit
+# is still on iced 0.14 and builds as rlib only. Drop once a release includes it.
+[patch.crates-io]
+iced_aw = { git = "https://github.com/iced-rs/iced_aw", rev = "e4c7eb24dd9fd0d62267dd227878f5305ea90ee6" }

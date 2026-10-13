@@ -21,9 +21,9 @@ pub async fn require_browser_pharmacy(
     State(app): State<AppState>,
     mut request: Request<Body>,
     next: Next,
-) -> Result<Response, Response> {
+) -> Response {
     let Some(token) = cookie_value(request.headers(), "pharmacy_session") else {
-        return Err(Redirect::to("/login").into_response());
+        return Redirect::to("/login").into_response();
     };
     let unsafe_method = !matches!(
         *request.method(),
@@ -35,40 +35,43 @@ pub async fn require_browser_pharmacy(
             .get("x-csrf-token")
             .and_then(|value| value.to_str().ok())
         else {
-            return Err(AppError::Forbidden.into_response());
+            return AppError::Forbidden.into_response();
         };
         app.authenticate_browser_mutation(&token, csrf).await
     } else {
         app.authenticate_browser_session(&token).await
     };
-    let pharmacy = result.map_err(|error| match error {
-        crate::app::AuthenticateError::Csrf => AppError::Forbidden.into_response(),
-        crate::app::AuthenticateError::Database => AppError::Internal.into_response(),
-        crate::app::AuthenticateError::Invalid => Redirect::to("/login").into_response(),
-    })?;
+    let pharmacy = match result {
+        Ok(pharmacy) => pharmacy,
+        Err(crate::app::AuthenticateError::Csrf) => return AppError::Forbidden.into_response(),
+        Err(crate::app::AuthenticateError::Database) => return AppError::Internal.into_response(),
+        Err(crate::app::AuthenticateError::Invalid) => {
+            return Redirect::to("/login").into_response();
+        }
+    };
     request.extensions_mut().insert(pharmacy);
     request.extensions_mut().insert(BrowserCredential { token });
-    Ok(next.run(request).await)
+    next.run(request).await
 }
 
 pub async fn require_api_pharmacy(
     State(app): State<AppState>,
     mut request: Request<Body>,
     next: Next,
-) -> Result<Response, Response> {
+) -> Response {
     let Some(token) = bearer_token(request.headers()) else {
-        return Err(AppError::Unauthorized.into_response());
+        return AppError::Unauthorized.into_response();
     };
-    let pharmacy = app
-        .authenticate_session(&token)
-        .await
-        .map_err(|error| match error {
-            crate::app::AuthenticateError::Invalid => AppError::Unauthorized.into_response(),
-            _ => AppError::Internal.into_response(),
-        })?;
+    let pharmacy = match app.authenticate_session(&token).await {
+        Ok(pharmacy) => pharmacy,
+        Err(crate::app::AuthenticateError::Invalid) => {
+            return AppError::Unauthorized.into_response();
+        }
+        Err(_) => return AppError::Internal.into_response(),
+    };
     request.extensions_mut().insert(pharmacy);
     request.extensions_mut().insert(ApiCredential { token });
-    Ok(next.run(request).await)
+    next.run(request).await
 }
 
 pub fn bearer_token(headers: &HeaderMap) -> Option<String> {

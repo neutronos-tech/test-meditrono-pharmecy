@@ -37,23 +37,26 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.94.0
+          toolchain: stable
           components: rustfmt, clippy
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@v2
 
+      - name: Install desktop build dependencies
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends pkg-config libxkbcommon-dev libwayland-dev
+
       - name: Check formatting
         run: cargo fmt --all --check
 
-      - name: Check server crates
-        run: cargo check -p contracts -p backend -p server --locked
+      - name: Check workspace
+        run: cargo check --workspace --all-targets --locked
 
       - name: Run Clippy
-        run: cargo clippy -p contracts -p backend -p server --all-targets --locked -- -D warnings
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
       - name: Run tests
-        run: cargo test -p contracts -p backend -p server --locked
+        run: cargo test --workspace --locked
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
