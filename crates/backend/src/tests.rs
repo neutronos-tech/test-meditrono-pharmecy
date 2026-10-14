@@ -354,6 +354,10 @@ fn multiline_sale_rolls_back_and_history_dashboard_work() {
     assert_eq!(dashboard.today_sales_total, Decimal::new(2500, 2));
     assert_eq!(dashboard.medicines_in_stock, 1);
     assert_eq!(dashboard.low_stock_medicines, 1);
+    assert_eq!(dashboard.daily_sales.len(), 7);
+    let today = dashboard.daily_sales.last().unwrap();
+    assert_eq!((today.count, today.total), (1, Decimal::new(2500, 2)));
+    assert!(dashboard.daily_sales[..6].iter().all(|day| day.count == 0));
     let history = db.history(HistoryFilter::Sales, 10).unwrap();
     assert_eq!(history.len(), 1);
     assert_eq!(history[0].operation_id, sale.operation_id);

@@ -1,6 +1,8 @@
+pub mod chart;
 pub mod data_table;
 pub mod empty_state;
 pub mod feedback;
+pub mod form;
 pub mod icon;
 pub mod metric_card;
 pub mod page;

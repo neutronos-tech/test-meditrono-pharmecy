@@ -100,6 +100,7 @@ pub fn view<'a>(state: &'a State, _pharmacy: &'a PharmacyAccount) -> Element<'a,
         Some(
             button("Refresh")
                 .style(theme::button::secondary)
+                .padding(theme::size::BUTTON_PADDING)
                 .on_press(Message::Refresh)
                 .into()
         )
@@ -150,6 +151,7 @@ pub fn view<'a>(state: &'a State, _pharmacy: &'a PharmacyAccount) -> Element<'a,
                 ) {
                 button("Reverse")
                     .style(theme::button::danger)
+                    .padding(theme::size::BUTTON_PADDING)
                     .on_press(Message::Confirm(entry.operation_id))
                     .into()
             } else {
@@ -180,9 +182,11 @@ pub fn view<'a>(state: &'a State, _pharmacy: &'a PharmacyAccount) -> Element<'a,
                     row![
                         button("Cancel")
                             .style(theme::button::secondary)
+                            .padding(theme::size::BUTTON_PADDING)
                             .on_press(Message::Cancel),
                         button("Confirm reversal")
                             .style(theme::button::danger)
+                            .padding(theme::size::BUTTON_PADDING)
                             .on_press(Message::Reverse)
                     ]
                     .spacing(theme::spacing::MD)

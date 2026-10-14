@@ -14,7 +14,7 @@ use contracts::{
 };
 use iced::{
     Element, Length,
-    widget::{button, column, container, row, scrollable, text, text_input},
+    widget::{button, column, container, row, scrollable, text},
 };
 use iced_aw::NumberInput;
 use uuid::Uuid;
@@ -164,6 +164,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
             Some(
                 button("Refresh")
                     .style(theme::button::secondary)
+                    .padding(theme::size::BUTTON_PADDING)
                     .on_press(Message::Refresh)
                     .into()
             )
@@ -198,18 +199,17 @@ pub fn view(state: &State) -> Element<'_, Message> {
             content = content
                 .push(
                     row![
-                        text_input("New medicine name", &state.new_medicine)
-                            .style(theme::text::input)
+                        crate::widget::form::input("New medicine name", &state.new_medicine)
                             .on_input(Message::MedicineName),
                         button("Create")
                             .style(theme::button::primary)
+                            .padding(theme::size::BUTTON_PADDING)
                             .on_press(Message::CreateMedicine)
                     ]
                     .spacing(theme::spacing::SM),
                 )
                 .push(
-                    text_input("Search medicines", &state.medicine_query)
-                        .style(theme::text::input)
+                    crate::widget::form::search("Search medicines", &state.medicine_query)
                         .on_input(Message::MedicineQuery),
                 );
             content = content.push(
@@ -280,6 +280,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
                             .step(0.01),
                             button("Save price")
                                 .style(theme::button::primary)
+                                .padding(theme::size::BUTTON_PADDING)
                                 .on_press(Message::SavePrice)
                         ]
                         .spacing(theme::spacing::SM),
@@ -293,18 +294,17 @@ pub fn view(state: &State) -> Element<'_, Message> {
             content = content
                 .push(
                     row![
-                        text_input("New supplier name", &state.new_supplier)
-                            .style(theme::text::input)
+                        crate::widget::form::input("New supplier name", &state.new_supplier)
                             .on_input(Message::SupplierName),
                         button("Create")
                             .style(theme::button::primary)
+                            .padding(theme::size::BUTTON_PADDING)
                             .on_press(Message::CreateSupplier)
                     ]
                     .spacing(theme::spacing::SM),
                 )
                 .push(
-                    text_input("Search suppliers", &state.supplier_query)
-                        .style(theme::text::input)
+                    crate::widget::form::search("Search suppliers", &state.supplier_query)
                         .on_input(Message::SupplierQuery),
                 );
             for supplier in &state.suppliers {

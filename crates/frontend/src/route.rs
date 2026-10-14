@@ -10,16 +10,6 @@ pub enum Route {
     Settings,
 }
 impl Route {
-    pub const ALL: [Route; 8] = [
-        Route::Dashboard,
-        Route::Purchase,
-        Route::Stock,
-        Route::Inventory,
-        Route::Sale,
-        Route::History,
-        Route::Catalog,
-        Route::Settings,
-    ];
     pub fn label(self) -> &'static str {
         match self {
             Self::Dashboard => "Dashboard",

@@ -3,6 +3,17 @@ use time::{Date, OffsetDateTime, UtcOffset, format_description::well_known::Rfc3
 pub fn money(value: Decimal) -> String {
     format!("৳{}", value.round_dp(2))
 }
+/// Money for tight spaces: ৳950, ৳12.4k, ৳3.1M.
+pub fn compact_money(value: Decimal) -> String {
+    let amount = decimal_as_f64(value);
+    if amount >= 1_000_000.0 {
+        format!("৳{:.1}M", amount / 1_000_000.0)
+    } else if amount >= 1_000.0 {
+        format!("৳{:.1}k", amount / 1_000.0)
+    } else {
+        format!("৳{amount:.0}")
+    }
+}
 pub fn date(value: Date) -> String {
     value.to_string()
 }

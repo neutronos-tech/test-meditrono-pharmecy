@@ -16,7 +16,7 @@ use contracts::{
 };
 use iced::{
     Element, Length,
-    widget::{button, column, container, row, scrollable, text, text_input},
+    widget::{button, column, container, row, scrollable, text},
 };
 use iced_aw::NumberInput;
 use lucide_icons::Icon;
@@ -155,12 +155,12 @@ pub fn view(state: &State) -> Element<'_, Message> {
             Some(
                 button("Refresh stock")
                     .style(theme::button::secondary)
+                    .padding(theme::size::BUTTON_PADDING)
                     .on_press(Message::Refresh)
                     .into()
             )
         ),
-        text_input("Search sellable medicines", &state.query)
-            .style(theme::text::input)
+        crate::widget::form::search("Search sellable medicines", &state.query)
             .on_input(Message::Query)
     ]
     .spacing(theme::spacing::LG);
@@ -226,6 +226,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
     content = content.push(
         button("Complete sale")
             .style(theme::button::primary)
+            .padding(theme::size::BUTTON_PADDING)
             .on_press(Message::Submit),
     );
     scrollable(content.padding(theme::spacing::XL).width(Length::Fill)).into()

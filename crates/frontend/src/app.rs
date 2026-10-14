@@ -1,4 +1,5 @@
 use crate::{
+    prefs,
     route::Route,
     screen::{catalog, dashboard, history, inventory, login, purchase, sale, settings, stock},
     theme::{self, ThemeMode},
@@ -36,12 +37,12 @@ fn seed_dev_login(mut backend: Backend) -> Backend {
     backend
 }
 
-fn database_path() -> Result<PathBuf, String> {
+fn data_dir() -> Result<PathBuf, String> {
     let dirs = directories::ProjectDirs::from(QUALIFIER, ORGANIZATION, APPLICATION)
         .ok_or("Could not locate an application data directory.")?;
     fs::create_dir_all(dirs.data_dir())
         .map_err(|_| "Could not create the application data directory.".to_string())?;
-    Ok(dirs.data_dir().join("pharmacy.db"))
+    Ok(dirs.data_dir().to_path_buf())
 }
 
 pub struct App {
@@ -56,6 +57,8 @@ pub struct App {
     connection_error: Option<String>,
     route: Route,
     pub theme_mode: ThemeMode,
+    /// Where display preferences are saved; `None` in tests.
+    prefs_path: Option<PathBuf>,
     fatal_error: Option<String>,
     login: login::State,
     dashboard: dashboard::State,
@@ -102,13 +105,20 @@ impl std::fmt::Debug for LoginResult {
 
 impl App {
     pub fn boot() -> (Self, Task<Message>) {
-        let backend = database_path().and_then(|path| {
-            Backend::open(path)
+        let dir = data_dir();
+        let backend = dir.clone().and_then(|dir| {
+            Backend::open(dir.join("pharmacy.db"))
                 .map_err(|_| "Could not open the local pharmacy database.".to_string())
         });
         #[cfg(debug_assertions)]
         let backend = backend.map(seed_dev_login);
-        Self::with_parts(backend, ServerClient::new())
+        let (mut app, task) = Self::with_parts(backend, ServerClient::new());
+        if let Ok(dir) = dir {
+            let path = dir.join("preferences.txt");
+            app.theme_mode = prefs::load_theme(&path);
+            app.prefs_path = Some(path);
+        }
+        (app, task)
     }
 
     /// Everything `boot` does once the database is open. Tests call this with a
@@ -140,6 +150,7 @@ impl App {
             connection_error: None,
             route: Route::Dashboard,
             theme_mode: ThemeMode::Light,
+            prefs_path: None,
             fatal_error,
             login: login::State::default(),
             dashboard: dashboard::State::default(),
@@ -377,6 +388,10 @@ impl App {
                             Some("Could not check medicine updates. Using local data.".into());
                     }
                 }
+                // The page on screen was never loaded while the catalogue synced.
+                if self.catalog_ready {
+                    self.navigate(self.route);
+                }
             }
             Message::RetryConnection => {
                 if let Some(saved) = &self.saved_auth {
@@ -393,7 +408,12 @@ impl App {
             }
             Message::RetryMedicineDownload => return self.start_catalog_sync(),
             Message::Navigate(route) => self.navigate(route),
-            Message::SetTheme(mode) => self.theme_mode = mode,
+            Message::SetTheme(mode) => {
+                self.theme_mode = mode;
+                if let Some(path) = &self.prefs_path {
+                    prefs::save_theme(path, mode);
+                }
+            }
             Message::Logout => {
                 if let Some(saved) = self.saved_auth.clone() {
                     let server = self.server.clone();
@@ -535,14 +555,22 @@ impl App {
             } else {
                 page
             };
-            row![
-                sidebar::view(pharmacy, self.route, size.width < 1050.0, self.theme_mode),
-                container(page)
-                    .width(Length::Fill)
-                    .height(Length::Fill)
-                    .style(theme::container::app)
-            ]
-            .height(Length::Fill)
+            container(
+                row![
+                    sidebar::view(pharmacy, self.route, size.width < 1050.0, self.theme_mode),
+                    container(page)
+                        .width(Length::Fill)
+                        .height(Length::Fill)
+                        .clip(true)
+                        .style(theme::container::panel)
+                ]
+                .height(Length::Fill),
+            )
+            .padding(iced::Padding {
+                left: 0.0,
+                ..iced::Padding::new(theme::spacing::MD + 2.0)
+            })
+            .style(theme::container::frame)
             .into()
         })
         .into()
@@ -635,6 +663,10 @@ mod tests {
         assert!(!app.catalog_loading);
         assert!(app.catalog_error.is_none());
         assert_eq!(backend(&app).medicine_revision().unwrap(), 3);
+        assert!(
+            app.dashboard.summary.is_some(),
+            "the dashboard loads once the catalogue is ready"
+        );
         assert_eq!(backend(&app).search_medicines("Napa", 10).unwrap().len(), 1);
     }
 

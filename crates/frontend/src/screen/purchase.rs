@@ -16,7 +16,7 @@ use contracts::{
 };
 use iced::{
     Element, Length,
-    widget::{Space, button, column, container, row, scrollable, text, text_input},
+    widget::{Space, button, column, container, row, scrollable, text},
 };
 use iced_aw::NumberInput;
 use lucide_icons::Icon;
@@ -188,6 +188,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
         Some(
             button("Refresh")
                 .style(theme::button::secondary)
+                .padding(theme::size::BUTTON_PADDING)
                 .on_press(Message::Refresh)
                 .into()
         )
@@ -200,8 +201,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
         content = content.push(success_banner(s));
     }
     content = content.push(text("Supplier").size(16)).push(
-        text_input("Search suppliers", &state.supplier_query)
-            .style(theme::text::input)
+        crate::widget::form::search("Search suppliers", &state.supplier_query)
             .on_input(Message::SupplierQuery),
     );
     for supplier in state.supplier_results.iter().take(6) {
@@ -213,13 +213,11 @@ pub fn view(state: &State) -> Element<'_, Message> {
         );
     }
     content = content.push(text("Invoice number")).push(
-        text_input("Invoice number", &state.invoice_number)
-            .style(theme::text::input)
+        crate::widget::form::input("Invoice number", &state.invoice_number)
             .on_input(Message::Invoice),
     );
     content = content.push(text("Add medicines").size(16)).push(
-        text_input("Search catalog", &state.medicine_query)
-            .style(theme::text::input)
+        crate::widget::form::search("Search catalog", &state.medicine_query)
             .on_input(Message::MedicineQuery),
     );
     for medicine in state.medicine_results.iter().take(8) {
@@ -267,6 +265,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
         .push(
             button("Create purchase")
                 .style(theme::button::primary)
+                .padding(theme::size::BUTTON_PADDING)
                 .on_press(Message::Submit),
         )
         .push(Space::new().height(theme::spacing::XL));

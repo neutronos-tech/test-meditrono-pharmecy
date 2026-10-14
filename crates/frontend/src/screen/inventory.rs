@@ -9,7 +9,7 @@ use backend::Backend;
 use contracts::inventory::{InventoryDetail, InventoryItem};
 use iced::{
     Element, Length,
-    widget::{button, column, row, scrollable, text, text_input},
+    widget::{button, column, row, scrollable, text},
 };
 use lucide_icons::Icon;
 #[derive(Default)]
@@ -71,12 +71,12 @@ pub fn view(state: &State) -> Element<'_, Message> {
             Some(
                 button("Refresh")
                     .style(theme::button::secondary)
+                    .padding(theme::size::BUTTON_PADDING)
                     .on_press(Message::Refresh)
                     .into()
             )
         ),
-        text_input("Search medicines", &state.query)
-            .style(theme::text::input)
+        crate::widget::form::search("Search medicines", &state.query)
             .on_input(Message::Query)
     ]
     .spacing(theme::spacing::LG);

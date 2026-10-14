@@ -211,6 +211,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
         Some(
             button("Refresh")
                 .style(theme::button::secondary)
+                .padding(theme::size::BUTTON_PADDING)
                 .on_press(Message::Refresh)
                 .into()
         )
@@ -238,6 +239,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
                     purchase.invoice_number, purchase.supplier_name, purchase.remaining_items
                 )))
                 .style(theme::button::secondary)
+                .padding(theme::size::BUTTON_PADDING)
                 .width(Length::Fill)
                 .on_press(Message::SelectPurchase(purchase.purchase_id)),
             );
@@ -251,6 +253,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
                 line.expiry_date,
                 button(text(line.expiry_date.to_string()))
                     .style(theme::button::secondary)
+                    .padding(theme::size::BUTTON_PADDING)
                     .on_press(Message::OpenDate(index)),
                 Message::CloseDate(index),
                 move |date| Message::SetDate(index, date),
@@ -273,8 +276,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
                             })
                             .width(110),
                             text("Batch"),
-                            iced::widget::text_input("Batch number", &line.batch_number)
-                                .style(theme::text::input)
+                            crate::widget::form::input("Batch number", &line.batch_number)
                                 .on_input(move |v| Message::Batch(index, v)),
                             text("Expiry"),
                             picker
@@ -291,6 +293,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
         content = content.push(
             button("Receive selected stock")
                 .style(theme::button::primary)
+                .padding(theme::size::BUTTON_PADDING)
                 .on_press(Message::Submit),
         );
     }
