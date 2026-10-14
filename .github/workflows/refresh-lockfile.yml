@@ -1,0 +1,36 @@
+name: Refresh Cargo.lock
+
+# Adds lock entries that a Cargo.toml change needs (new crates or features)
+# without upgrading anything already locked, then commits the result.
+# Run it from the Actions tab when CI fails with "cannot update the lock file".
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Resolve missing lock entries
+        run: cargo metadata --format-version 1 > /dev/null
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet Cargo.lock; then
+            echo "Cargo.lock is already up to date."
+            exit 0
+          fi
+          git diff --stat Cargo.lock
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Refresh Cargo.lock"
+          git push
