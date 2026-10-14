@@ -1,20 +1,18 @@
 @import "tailwindcss";
 
-/* Desktop app palette (crates/frontend/src/theme/palette.rs) on an editorial layout. */
+/* Clinical white. Green from the desktop app is the only accent. */
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --color-brand: #2f8a63;
   --color-brand-dark: #26724f;
-  --color-brand-soft: #e4f2ea;
+  --color-brand-soft: #eef7f2;
   --color-gold: #d8bb7e;
-  --color-gold-soft: #f7efdc;
-  --color-cream: #fbf7ef;
-  --color-line: #efe8da;
-  --color-ink: #141815;
-  --color-night: #0f1311;
-  --color-muted: #8b8f86;
+  --color-cream: #f7f8f8;
+  --color-line: #e9eceb;
+  --color-ink: #101413;
+  --color-night: #101413;
+  --color-muted: #6f7673;
   --color-danger: #d9534f;
-  --color-paper: #ecebe6;
 }
 
 html {
@@ -22,7 +20,7 @@ html {
 }
 
 body {
-  background: var(--color-paper);
+  background: #ffffff;
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
 }

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { api, getToken, setToken } from "../api.js";
-import { Eyebrow, Landscape, Link, SITE, dark, light } from "../ui.jsx";
+import { Eyebrow, Link, PHOTOS, Photo, SITE, dark, light } from "../ui.jsx";
 
-export const field = "mt-1 w-full rounded-2xl border border-black/10 bg-cream px-4 py-3 outline-none focus:border-brand";
+export const field = "mt-1 w-full rounded-2xl border border-line bg-cream px-4 py-3 outline-none focus:border-brand";
 
 export function Auth({ mode, go }) {
   const signup = mode === "signup";
@@ -31,13 +31,13 @@ export function Auth({ mode, go }) {
 
   return (
     <main className="grid gap-3 p-2 sm:p-3 md:grid-cols-2">
-      <Landscape scene={signup ? "meadow" : "mint"} className="hidden min-h-[560px] md:block">
-        <div className="flex h-full flex-col justify-end p-10">
+      <Photo src={signup ? PHOTOS.pharmacist : PHOTOS.counsel} alt="" shade className="hidden min-h-[600px] md:block">
+        <div className="flex h-full flex-col justify-end p-10 text-white">
           <p className="max-w-sm text-3xl font-medium tracking-tight">
             {signup ? "Your first month is on us." : "Welcome back to the counter."}
           </p>
         </div>
-      </Landscape>
+      </Photo>
       <form onSubmit={submit} className="flex flex-col justify-center px-4 py-12 sm:px-12">
         <Eyebrow>{signup ? "Create account" : "Sign in"}</Eyebrow>
         <h1 className="mt-6 text-4xl font-medium tracking-tight">{signup ? "Start your free month" : "Sign in"}</h1>
@@ -98,14 +98,14 @@ export function Dashboard({ go }) {
       {error && <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm text-danger">{error}</p>}
 
       <section className="mt-8 grid gap-3 md:grid-cols-2">
-        <Landscape scene="dusk" className="min-h-[240px]">
+        <Photo src={PHOTOS.shelves} alt="" shade className="min-h-[260px]">
           <div className="flex h-full flex-col justify-end p-6 text-white">
             <p className="text-2xl font-medium">Install on your shop computer</p>
             <p className="mt-2 max-w-sm text-sm text-white/70">Download, unzip and sign in with this username. Your first computer gets the free month.</p>
             <a href={SITE.downloadUrl} className={`${light} mt-4 self-start`}>Download for Windows ↗</a>
           </div>
-        </Landscape>
-        <div className="rounded-[28px] bg-cream p-6">
+        </Photo>
+        <div className="rounded-[24px] bg-cream p-6">
           <p className="text-2xl font-medium">Payment</p>
           <p className="mt-2 text-sm text-muted">Online payment with bKash, Nagad and card is coming soon. To continue after your free month, contact us and we'll activate your computer.</p>
           <Link to="/contact" go={go} className={`${dark} mt-6`}>Contact us</Link>
@@ -122,7 +122,7 @@ export function Dashboard({ go }) {
 
 export function DeviceTable({ devices, now, actions }) {
   return (
-    <div className="mt-4 overflow-x-auto rounded-[24px] border border-black/10">
+    <div className="mt-4 overflow-x-auto rounded-[24px] border border-line">
       <table className="w-full min-w-[560px] text-left text-sm">
         <thead className="bg-cream text-xs uppercase tracking-wider text-muted">
           <tr>
@@ -140,7 +140,7 @@ export function DeviceTable({ devices, now, actions }) {
             const paid = new Date(device.paid_until);
             const ok = device.active && paid.getTime() > now;
             return (
-              <tr key={device.id} className="border-t border-black/5">
+              <tr key={device.id} className="border-t border-line">
                 <td className="p-4 font-medium">{device.name} <span className="text-xs text-muted">#{device.id}</span></td>
                 <td className="p-4">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${ok ? "bg-brand-soft text-brand" : "bg-red-50 text-danger"}`}>

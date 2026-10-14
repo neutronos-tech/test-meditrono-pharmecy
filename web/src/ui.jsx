@@ -4,7 +4,21 @@ import { useEffect, useState } from "react";
 export const SITE = {
   contactEmail: "",
   contactPhone: "",
+  whatsapp: "",
   downloadUrl: "https://github.com/neutronos-tech/test-meditrono-pharmecy/releases/latest",
+};
+
+// Free-licence photos from Unsplash (unsplash.com/license).
+const unsplash = (id, w = 1600) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
+export const PHOTOS = {
+  pharmacist: unsplash("photo-1580281657527-47f249e8f4df"),
+  counsel: unsplash("photo-1576091358783-a212ec293ff3"),
+  shelves: unsplash("photo-1642055514517-7b52288890ec"),
+  inventory: unsplash("photo-1764795850513-fa8a469a4600"),
+  pills: unsplash("photo-1587854692152-cbe660dbde88", 1200),
+  sign: unsplash("photo-1622230208995-0f26eba75875", 1200),
+  vials: unsplash("photo-1576671081837-49000212a370", 1200),
+  capsules: unsplash("photo-1471864190281-a93a3070b6de", 1200),
 };
 
 export function usePath() {
@@ -39,63 +53,40 @@ export function Link({ to, go, className = "", children }) {
 }
 
 export const pill = "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition";
-export const dark = `${pill} bg-ink text-white hover:bg-black`;
-export const light = `${pill} border border-black/10 bg-white text-ink hover:bg-cream`;
+export const dark = `${pill} bg-ink text-white hover:bg-brand`;
+export const light = `${pill} border border-line bg-white text-ink hover:border-ink`;
 export const green = `${pill} bg-brand text-white hover:bg-brand-dark`;
+
+export function Arrow({ className = "" }) {
+  return (
+    <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-ink ${className}`} aria-hidden="true">
+      ↗
+    </span>
+  );
+}
 
 export function Eyebrow({ children, invert }) {
   return (
-    <p className={`flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] ${invert ? "text-white/50" : "text-muted"}`}>
-      <span className={`h-px w-6 ${invert ? "bg-white/30" : "bg-black/20"}`} /> {children}
+    <p className={`flex items-center gap-2 text-xs font-medium ${invert ? "text-white/70" : "text-muted"}`}>
+      <span className="h-1.5 w-1.5 rounded-full bg-brand" /> {children}
     </p>
   );
 }
 
 export function Tag({ children, invert }) {
   return (
-    <span className={`rounded-full border px-3 py-1 text-[11px] ${invert ? "border-white/25 text-white/80" : "border-black/15 text-ink/70"}`}>
+    <span className={`rounded-full px-3 py-1 text-xs ${invert ? "bg-white/15 text-white backdrop-blur" : "bg-cream text-ink/80"}`}>
       {children}
     </span>
   );
 }
 
-const SCENES = {
-  meadow: { sky: ["#dfe9f2", "#f4f1e8"], hills: ["#9cc9a0", "#5fa36f", "#2f8a63"], sun: "#f7efdc" },
-  dusk: { sky: ["#2a3a34", "#7d9a86"], hills: ["#5d8a6c", "#3f6e52", "#1f4d38"], sun: "#d8bb7e" },
-  mint: { sky: ["#e4f2ea", "#fbf7ef"], hills: ["#b7dcc4", "#7fbf95", "#4c9f72"], sun: "#ffffff" },
-  gold: { sky: ["#f7efdc", "#fbf7ef"], hills: ["#d8e6b8", "#a9c98b", "#6fa86c"], sun: "#d8bb7e" },
-};
-
-/** Soft rolling-hills artwork that stands in for photography. */
-export function Landscape({ scene = "meadow", className = "", children, capsules = true }) {
-  const s = SCENES[scene];
-  const id = `sky-${scene}`;
+/** A rounded photo with an optional overlay; children sit on top. */
+export function Photo({ src, alt = "", className = "", shade = false, children }) {
   return (
-    <div className={`relative overflow-hidden rounded-[28px] ${className}`}>
-      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <defs>
-          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor={s.sky[0]} />
-            <stop offset="1" stopColor={s.sky[1]} />
-          </linearGradient>
-        </defs>
-        <rect width="1200" height="600" fill={`url(#${id})`} />
-        <circle cx="930" cy="150" r="70" fill={s.sun} opacity="0.85" />
-        <path d="M0 360 C 200 280 380 300 560 340 S 920 260 1200 320 V600 H0Z" fill={s.hills[0]} />
-        <path d="M0 430 C 240 360 420 400 640 420 S 1000 360 1200 400 V600 H0Z" fill={s.hills[1]} />
-        <path d="M0 520 C 260 460 520 500 760 500 S 1080 470 1200 490 V600 H0Z" fill={s.hills[2]} />
-        {capsules && (
-          <g>
-            <g transform="translate(150 470) rotate(-28)">
-              <rect width="120" height="44" rx="22" fill="#fff" />
-              <rect width="60" height="44" rx="22" fill="#d8bb7e" />
-              <rect x="38" width="22" height="44" fill="#d8bb7e" />
-            </g>
-            <circle cx="300" cy="520" r="18" fill="#fff" opacity="0.9" />
-            <circle cx="1040" cy="470" r="12" fill="#fff" opacity="0.8" />
-          </g>
-        )}
-      </svg>
+    <div className={`relative overflow-hidden rounded-[24px] bg-cream ${className}`}>
+      <img src={src} alt={alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+      {shade && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />}
       <div className="relative h-full">{children}</div>
     </div>
   );
@@ -103,15 +94,15 @@ export function Landscape({ scene = "meadow", className = "", children, capsules
 
 export function Wordmark({ className = "" }) {
   return (
-    <span className={`font-semibold leading-[0.8] tracking-[-0.06em] ${className}`}>
-      Meditrino<sup className="ml-1 align-super text-[0.25em] font-medium tracking-normal">®</sup>
+    <span className={`font-semibold leading-[0.85] tracking-[-0.055em] ${className}`}>
+      Meditrino<sup className="ml-1 align-super text-[0.22em] font-medium tracking-normal">®</sup>
     </span>
   );
 }
 
 export function PageHead({ eyebrow, title, muted, children }) {
   return (
-    <section className="px-5 pb-10 pt-14 sm:px-10 sm:pt-20">
+    <section className="px-5 pb-12 pt-16 sm:px-10 sm:pt-24">
       <Eyebrow>{eyebrow}</Eyebrow>
       <h1 className="mt-6 max-w-4xl text-4xl font-medium leading-[1.05] tracking-tight sm:text-6xl">
         {title} {muted && <span className="text-muted">{muted}</span>}

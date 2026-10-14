@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, taka } from "../api.js";
-import { Eyebrow, Landscape, Link, PageHead, SITE, Tag, dark, light } from "../ui.jsx";
+import { Eyebrow, Link, PHOTOS, PageHead, Photo, SITE, Tag, dark, light } from "../ui.jsx";
 
 const FEATURE_GROUPS = [
   {
@@ -45,17 +45,22 @@ export function Features({ go }) {
   return (
     <main>
       <PageHead eyebrow="Features" title="Built for a busy counter." muted="Simple enough for the first day, deep enough for every day." />
+      <div className="mb-3 grid gap-3 px-3 sm:grid-cols-3 sm:px-5">
+        <Photo src={PHOTOS.counsel} alt="A pharmacist with a customer" className="h-64" />
+        <Photo src={PHOTOS.shelves} alt="Shelves of medicine boxes" className="h-64" />
+        <Photo src={PHOTOS.inventory} alt="Checking stock with a tablet" className="h-64" />
+      </div>
       <div className="space-y-3 px-2 sm:px-3">
         {FEATURE_GROUPS.map((group, index) => (
-          <section key={group.title} className={`rounded-[28px] p-6 sm:p-10 ${index === 1 ? "bg-night text-white" : "bg-cream"}`}>
+          <section key={group.title} className={`rounded-[28px] p-6 sm:p-10 ${index === 1 ? "bg-brand text-white" : "bg-cream"}`}>
             <div className="grid gap-8 md:grid-cols-[220px_1fr]">
               <div>
-                <p className={`text-xs ${index === 1 ? "text-white/40" : "text-muted"}`}>0{index + 1}</p>
+                <p className={`text-xs ${index === 1 ? "text-white/70" : "text-muted"}`}>0{index + 1}</p>
                 <h2 className="mt-2 text-2xl font-medium tracking-tight">{group.title}</h2>
               </div>
               <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
                 {group.items.map(([title, text]) => (
-                  <div key={title} className={`border-t pt-4 ${index === 1 ? "border-white/10" : "border-black/10"}`}>
+                  <div key={title} className={`border-t pt-4 ${index === 1 ? "border-white/20" : "border-black/10"}`}>
                     <p className="font-medium">{title}</p>
                     <p className={`mt-1 text-sm ${index === 1 ? "text-white/60" : "text-muted"}`}>{text}</p>
                   </div>
@@ -91,6 +96,9 @@ export function Pricing({ go }) {
   return (
     <main>
       <PageHead eyebrow="Pricing" title="One simple price per computer." muted="First month free. No card needed." />
+      <div className="mb-10 px-3 sm:px-5">
+        <Photo src={PHOTOS.capsules} alt="Medicine tablets and capsules" className="h-56" />
+      </div>
       <section className="grid gap-3 px-5 pb-10 sm:px-10 md:grid-cols-3">
         {plans === null && <p className="text-muted">Loading prices…</p>}
         {plans?.length === 0 && (
@@ -101,7 +109,7 @@ export function Pricing({ go }) {
           </div>
         )}
         {plans?.map((plan, index) => (
-          <div key={plan.code} className={`flex flex-col rounded-[28px] p-8 ${index === 0 ? "bg-night text-white" : "border border-black/10"}`}>
+          <div key={plan.code} className={`flex flex-col rounded-[28px] p-8 ${index === 0 ? "bg-brand text-white" : "border border-black/10"}`}>
             <p className="text-sm opacity-60">{plan.name}</p>
             <p className="mt-8 text-5xl font-semibold tracking-tight">
               {plan.monthly_price_paisa > 0 ? taka(plan.monthly_price_paisa) : "Free"}
@@ -144,11 +152,11 @@ export function About({ go }) {
     <main>
       <PageHead eyebrow="Part of MEDITRONO" title="One piece of Bangladesh's digital health infrastructure." muted="Built first for the people behind the pharmacy counter." />
       <section className="px-2 sm:px-3">
-        <Landscape scene="dusk" className="h-[360px] sm:h-[480px]">
+        <Photo src={PHOTOS.counsel} alt="A pharmacist helping a customer" shade className="h-[360px] sm:h-[520px]">
           <div className="flex h-full items-end p-6 text-white sm:p-10">
             <p className="max-w-xl text-xl font-medium sm:text-3xl">MEDITRONO connects patients, doctors and pharmacies. Meditrino Pharmacy is where it starts.</p>
           </div>
-        </Landscape>
+        </Photo>
       </section>
       <section className="grid gap-3 px-5 py-20 sm:px-10 md:grid-cols-3">
         {[
@@ -156,8 +164,8 @@ export function About({ go }) {
           ["Why pharmacy first", "Pharmacies are where care meets medicine every day. Giving them reliable, offline-first tools is the fastest way to make health data useful."],
           ["What comes next", "Digital prescriptions from MEDITRONO doctors that arrive at your counter as an exact cart, and patients who can see which nearby pharmacy has their medicine, if you choose."],
         ].map(([title, text], index) => (
-          <div key={title} className={`rounded-[24px] p-6 ${index === 1 ? "bg-night text-white" : "bg-cream"}`}>
-            <p className={`text-xs ${index === 1 ? "text-white/40" : "text-muted"}`}>0{index + 1}</p>
+          <div key={title} className={`rounded-[24px] p-6 ${index === 1 ? "bg-brand text-white" : "bg-cream"}`}>
+            <p className={`text-xs ${index === 1 ? "text-white/70" : "text-muted"}`}>0{index + 1}</p>
             <p className="mt-8 text-xl font-medium">{title}</p>
             <p className={`mt-3 text-sm ${index === 1 ? "text-white/60" : "text-muted"}`}>{text}</p>
           </div>
@@ -177,8 +185,11 @@ export function Contact({ go }) {
   return (
     <main>
       <PageHead eyebrow="Contact" title="Let's set up your pharmacy." muted="We'll help you load your stock and get started." />
+      <div className="mb-3 px-3 sm:px-5">
+        <Photo src={PHOTOS.pharmacist} alt="A pharmacist at the shelves" className="h-72" />
+      </div>
       <section className="grid gap-3 px-5 pb-20 sm:px-10 md:grid-cols-2">
-        <div className="rounded-[28px] bg-night p-8 text-white">
+        <div className="rounded-[24px] bg-brand p-8 text-white">
           <p className="text-sm text-white/50">Fastest way</p>
           <p className="mt-6 text-3xl font-medium">Create your account and download the app.</p>
           <p className="mt-3 text-sm text-white/60">Your first computer gets a free month. During the pilot we'll contact you to help with setup.</p>

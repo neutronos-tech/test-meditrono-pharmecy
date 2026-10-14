@@ -123,9 +123,9 @@ function PlanEditor({ plan, isNew, onSaved }) {
       setStatus(failure.status === 400 ? "Check the values. One active default plan must always exist." : failure.message);
     }
   }
-  const input = "mt-1 w-full rounded-xl border border-black/10 bg-cream px-3 py-2";
+  const input = "mt-1 w-full rounded-xl border border-line bg-cream px-3 py-2";
   return (
-    <form onSubmit={save} className={`rounded-[24px] p-6 ${isNew ? "" : "bg-cream/60 border border-black/5"}`}>
+    <form onSubmit={save} className={`rounded-[24px] p-6 ${isNew ? "" : "bg-cream/60 border border-line"}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-lg font-medium">{isNew ? "New plan" : `${plan.name} · ${taka(plan.monthly_price_paisa)}/month`}</p>
         {plan.is_default && <span className="rounded-full bg-brand-soft px-3 py-1 text-xs text-brand">Default for new computers</span>}
@@ -164,7 +164,7 @@ function Customers({ onUnauthorized }) {
         {customers === null && <p className="text-muted">Loading…</p>}
         {customers?.length === 0 && <p className="text-muted">No customers found.</p>}
         {customers?.map((customer) => (
-          <div key={customer.id} className="rounded-[24px] border border-black/10 p-5">
+          <div key={customer.id} className="rounded-[24px] border border-line p-5">
             <button className="flex w-full flex-wrap items-center justify-between gap-3 text-left" onClick={() => setOpenId(openId === customer.id ? null : customer.id)}>
               <div>
                 <p className="text-lg font-medium">{customer.username}</p>
@@ -199,7 +199,7 @@ function CustomerDevices({ pharmacyId, onUnauthorized }) {
       setBusy(false);
     }
   };
-  const small = "rounded-full border border-black/10 px-3 py-1 text-xs hover:bg-cream disabled:opacity-50";
+  const small = "rounded-full border border-line px-3 py-1 text-xs hover:bg-cream disabled:opacity-50";
   return (
     <div className="mt-4">
       {error && <p className="rounded-2xl bg-red-50 p-3 text-sm text-danger">{error}</p>}
@@ -223,7 +223,7 @@ function CustomerDevices({ pharmacyId, onUnauthorized }) {
 function Audit({ onUnauthorized }) {
   const [entries, error] = useLoad(() => adminApi.audit(), onUnauthorized);
   return (
-    <div className="overflow-x-auto rounded-[24px] border border-black/10">
+    <div className="overflow-x-auto rounded-[24px] border border-line">
       {error && <p className="m-4 rounded-2xl bg-red-50 p-3 text-sm text-danger">{error}</p>}
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead className="bg-cream text-xs uppercase tracking-wider text-muted">
@@ -232,7 +232,7 @@ function Audit({ onUnauthorized }) {
         <tbody>
           {entries === null && <tr><td className="p-4 text-muted" colSpan="4">Loading…</td></tr>}
           {entries?.map((entry) => (
-            <tr key={entry.id} className="border-t border-black/5 align-top">
+            <tr key={entry.id} className="border-t border-line align-top">
               <td className="whitespace-nowrap p-4 text-muted">{new Date(entry.created_at).toLocaleString("en-GB")}</td>
               <td className="p-4 font-medium">{entry.action}</td>
               <td className="p-4">{entry.actor} <span className="text-xs text-muted">({entry.source})</span></td>
