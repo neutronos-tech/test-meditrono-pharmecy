@@ -46,10 +46,10 @@ export function Features({ go }) {
   return (
     <main>
       <PageHead eyebrow="Features" title="Built for a busy counter." muted="Simple enough for the first day, deep enough for every day." />
-      <div className="mx-auto mb-16 max-w-[1000px] px-4 sm:px-8">
+      <div className="mx-auto mb-16 max-w-[1000px] px-5 sm:px-8">
         <Laptop />
       </div>
-      <div className="mb-16 grid max-w-[1100px] gap-3 px-4 sm:grid-cols-2 sm:px-8 lg:px-12">
+      <div className="mb-16 grid max-w-[1100px] gap-3 px-4 sm:grid-cols-2 sm:px-8 lg:px-14">
         <img src={IMAGES.shelves} alt="Pharmacy shelves" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
         <img src={IMAGES.scanner} alt="Scanning a medicine box" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
       </div>
@@ -73,7 +73,7 @@ export function Features({ go }) {
           </section>
         ))}
       </div>
-      <section className="px-4 py-20 sm:px-8 lg:px-12">
+      <section className="px-4 py-20 sm:px-8 lg:px-14">
         <Eyebrow>Coming next</Eyebrow>
         <h2 className="mt-6 text-3xl font-medium tracking-tight sm:text-5xl">On the roadmap</h2>
         <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -99,11 +99,11 @@ export function Pricing({ go }) {
   return (
     <main>
       <PageHead eyebrow="Pricing" title="One simple price per computer." muted="First month free. No card needed." />
-      <div className="mb-16 grid max-w-[1100px] gap-3 px-4 sm:grid-cols-2 sm:px-8 lg:px-12">
+      <div className="mb-16 grid max-w-[1100px] gap-3 px-4 sm:grid-cols-2 sm:px-8 lg:px-14">
         <img src={IMAGES.capsules} alt="Green and white capsules" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
         <img src={IMAGES.doctor} alt="A pharmacist using a tablet" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
       </div>
-      <section className="grid gap-3 px-4 pb-10 sm:px-8 lg:px-12 md:grid-cols-3">
+      <section className="grid gap-3 px-4 pb-10 sm:px-8 lg:px-14 md:grid-cols-3">
         {plans === null && <p className="text-muted">Loading prices…</p>}
         {plans?.length === 0 && (
           <div className="rounded-[2rem] bg-cream p-8 md:col-span-3">
@@ -133,7 +133,7 @@ export function Pricing({ go }) {
           </div>
         ))}
       </section>
-      <section className="px-4 pb-20 sm:px-8 lg:px-12">
+      <section className="px-4 pb-20 sm:px-8 lg:px-14">
         <div className="grid gap-6 rounded-[2rem] bg-cream p-8 md:grid-cols-3">
           {[
             ["What if I'm offline when it's time to renew?", "The app warns you 7 days early, then keeps a 7-day read-only grace period. Your data is never locked away."],
@@ -151,51 +151,15 @@ export function Pricing({ go }) {
   );
 }
 
-export function About({ go }) {
-  return (
-    <main>
-      <PageHead eyebrow="Part of MEDITRONO" title="One piece of Bangladesh's digital health infrastructure." muted="Built first for the people behind the pharmacy counter." />
-      <section className="px-2 sm:px-3">
-        <div className="grid gap-3 md:grid-cols-[minmax(0,560px)_minmax(0,560px)_1fr]">
-          <img src={IMAGES.building} alt="A modern healthcare building" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
-          <img src={IMAGES.valley} alt="Sunrise over green hills and a river" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
-          <div className="flex items-end rounded-[1.75rem] bg-brand-dark p-8 text-white">
-            <p className="text-xl font-medium leading-snug">MEDITRONO connects patients, doctors and pharmacies. M. Pharmacy is where it starts.</p>
-          </div>
-        </div>
-      </section>
-      <section className="grid gap-3 px-4 py-20 sm:px-8 lg:px-12 md:grid-cols-3">
-        {[
-          ["The platform", "MEDITRONO is building shared digital health infrastructure for Bangladesh: identity, records, prescriptions, payments and a national medicine catalogue."],
-          ["Why pharmacy first", "Pharmacies are where care meets medicine every day. Giving them reliable, offline-first tools is the fastest way to make health data useful."],
-          ["What comes next", "Digital prescriptions from MEDITRONO doctors that arrive at your counter as an exact cart, and patients who can see which nearby pharmacy has their medicine, if you choose."],
-        ].map(([title, text], index) => (
-          <div key={title} className={`rounded-[2rem] p-6 ${index === 1 ? "bg-brand text-white" : "bg-cream"}`}>
-            <p className={`text-xs ${index === 1 ? "text-white/70" : "text-muted"}`}>0{index + 1}</p>
-            <p className="mt-8 text-xl font-medium">{title}</p>
-            <p className={`mt-3 text-sm ${index === 1 ? "text-white/60" : "text-muted"}`}>{text}</p>
-          </div>
-        ))}
-      </section>
-      <section className="px-4 pb-20 sm:px-8 lg:px-12">
-        <p className="max-w-4xl text-3xl font-medium leading-tight tracking-tight sm:text-[44px]">
-          Your shop's data belongs to you. <span className="text-muted">MEDITRONO only reads your business data if you opt in, and the medicine catalogue flows one way: to you.</span>
-        </p>
-        <Link to="/contact" go={go} className={`${dark} mt-10`}>Talk to us</Link>
-      </section>
-    </main>
-  );
-}
-
 export function Contact({ go }) {
   return (
     <main>
       <PageHead eyebrow="Contact" title="Let's set up your pharmacy." muted="We'll help you load your stock and get started." />
-      <div className="mb-16 grid max-w-[1100px] gap-3 px-4 sm:grid-cols-2 sm:px-8 lg:px-12">
+      <div className="mb-16 grid max-w-[1100px] gap-3 px-4 sm:grid-cols-2 sm:px-8 lg:px-14">
         <img src={IMAGES.hands} alt="Two hands resting together" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
         <img src={IMAGES.sprout} alt="A young plant growing on stone" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
       </div>
-      <section className="grid gap-3 px-4 pb-20 sm:px-8 lg:px-12 md:grid-cols-2">
+      <section className="grid gap-3 px-4 pb-20 sm:px-8 lg:px-14 md:grid-cols-2">
         <div className="rounded-[2rem] bg-brand p-8 text-white">
           <p className="text-sm text-white/50">Fastest way</p>
           <p className="mt-6 text-3xl font-medium">Create your account and download the app.</p>

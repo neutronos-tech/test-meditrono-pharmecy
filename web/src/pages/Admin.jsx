@@ -14,7 +14,7 @@ export default function Admin() {
     setToken(null);
   };
   return (
-    <main className="px-4 pb-16 pt-8 sm:px-8 lg:px-12">
+    <main className="px-4 pb-16 pt-8 sm:px-8 lg:px-14">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Eyebrow>Founder CMS</Eyebrow>

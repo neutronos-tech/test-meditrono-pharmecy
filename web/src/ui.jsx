@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { animate, stagger } from "animejs";
+import { useEffect, useState } from "react";
+import { Counter, Reveal, Words, scrollToTop } from "./motion.jsx";
 import { ArrowUpRight } from "@phosphor-icons/react";
 
 export const BRAND = "M. Pharmacy";
@@ -51,7 +51,8 @@ export function Logo({ invert = false, small = false }) {
   );
 }
 
-const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+/** One page gutter for every section, so all left edges line up. */
+export const WRAP = "px-5 sm:px-8 lg:px-14";
 
 export function usePath() {
   const [path, setPath] = useState(window.location.pathname);
@@ -63,7 +64,7 @@ export function usePath() {
   const go = (to) => {
     window.history.pushState(null, "", to);
     setPath(to);
-    window.scrollTo(0, 0);
+    scrollToTop();
   };
   return [path, go];
 }
@@ -137,87 +138,17 @@ export function Wordmark({ className = "" }) {
   );
 }
 
-/** Children fade and rise in a stagger the first time they scroll into view. */
-export function Reveal({ as: Tag = "div", className = "", children, delay = 0 }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    const items = Array.from(element.children);
-    if (reducedMotion()) return;
-    // Hide only once JS runs, and always end visible even if a frame stalls.
-    items.forEach((item) => (item.style.opacity = 0));
-    const show = () => items.forEach((item) => { item.style.opacity = 1; item.style.transform = "none"; });
-    let fallback = 0;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        observer.disconnect();
-        fallback = setTimeout(show, 2500);
-        animate(items, {
-          opacity: [0, 1],
-          translateY: [28, 0],
-          delay: stagger(90, { start: delay }),
-          duration: 1100,
-          ease: "outExpo",
-          onComplete: show,
-        });
-      },
-      { threshold: 0.15 },
-    );
-    observer.observe(element);
-    return () => {
-      clearTimeout(fallback);
-      observer.disconnect();
-    };
-  }, []);
-  return (
-    <Tag ref={ref} data-reveal className={className}>
-      {children}
-    </Tag>
-  );
-}
-
-/** Counts up to `value` once visible. Non-numeric prefixes and suffixes stay put. */
-export function Counter({ value, className = "" }) {
-  const ref = useRef(null);
-  const match = String(value).match(/^(\D*)(\d+)(.*)$/);
-  useEffect(() => {
-    const element = ref.current;
-    if (!element || !match || reducedMotion()) return;
-    const [, prefix, digits, suffix] = match;
-    const target = { n: 0 };
-    element.textContent = `${prefix}0${suffix}`;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      observer.disconnect();
-      animate(target, {
-        n: Number(digits),
-        duration: 1600,
-        ease: "outExpo",
-        onUpdate: () => (element.textContent = `${prefix}${Math.round(target.n)}${suffix}`),
-      });
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [value]);
-  return (
-    <span ref={ref} className={`tabular-nums ${className}`}>
-      {value}
-    </span>
-  );
-}
+export { Counter, Reveal };
 
 export function PageHead({ eyebrow, title, muted, children }) {
   return (
-    <Reveal as="section" className="grid gap-8 px-4 pb-14 pt-16 sm:px-8 md:grid-cols-[1fr_2fr] lg:px-12 lg:pt-24">
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <div>
-        <h1 className="max-w-4xl text-4xl font-medium leading-none tracking-tighter md:text-6xl">
-          {title} {muted && <span className="text-muted">{muted}</span>}
-        </h1>
+    <section className={`${WRAP} grid gap-8 pb-14 pt-16 md:grid-cols-12 lg:pt-24`}>
+      <div className="md:col-span-3"><Eyebrow>{eyebrow}</Eyebrow></div>
+      <div className="md:col-span-9">
+        <Words as="h1" text={title} className="max-w-4xl text-4xl font-semibold leading-[1.02] tracking-tighter text-brand-dark md:text-6xl" />
+        {muted && <Reveal><p className="mt-5 max-w-[52ch] text-lg leading-relaxed text-muted">{muted}</p></Reveal>}
         {children}
       </div>
-    </Reveal>
+    </section>
   );
 }
