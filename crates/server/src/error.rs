@@ -11,6 +11,8 @@ pub enum AppError {
     Unauthorized,
     Forbidden,
     NotFound,
+    PaymentRequired,
+    Unavailable,
     Internal,
 }
 
@@ -35,6 +37,16 @@ impl IntoResponse for AppError {
             }
             Self::Forbidden => (StatusCode::FORBIDDEN, "Request rejected.").into_response(),
             Self::NotFound => (StatusCode::NOT_FOUND, "Not found.").into_response(),
+            Self::PaymentRequired => (
+                StatusCode::PAYMENT_REQUIRED,
+                "Subscription payment required.",
+            )
+                .into_response(),
+            Self::Unavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Licensing is not configured.",
+            )
+                .into_response(),
             Self::Database(error) => {
                 tracing::error!(%error, "database operation failed");
                 (StatusCode::INTERNAL_SERVER_ERROR, "Request failed.").into_response()

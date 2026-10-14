@@ -343,3 +343,59 @@ async fn developer_token_authenticates_only_when_enabled() {
     );
     db.drop_db().await;
 }
+
+fn renew(token: &str, fingerprint: &str) -> Request<Body> {
+    let body = serde_json::to_vec(&contracts::licence::LicenceRenewInput {
+        device_fingerprint: fingerprint.into(),
+        device_name: "Counter PC".into(),
+    })
+    .unwrap();
+    Request::builder()
+        .method("POST")
+        .uri("/api/v1/licence/renew")
+        .header(header::AUTHORIZATION, format!("Bearer {token}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(body))
+        .unwrap()
+}
+
+#[tokio::test]
+async fn first_device_gets_a_trial_licence_and_second_device_must_pay() {
+    use contracts::licence::{LicenceState, SignedLicence, TrustedKey, evaluate, verify};
+    let db = fresh_db().await;
+    let token = sign_in(&db.app).await;
+    let trusted = [TrustedKey {
+        key_id: 1,
+        public_key: db.app.licence_key.as_ref().unwrap().public_key(),
+    }];
+
+    let response = send(&db.app, renew(&token, "device-a")).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let licence: SignedLicence = serde_json::from_slice(&body_bytes(response).await).unwrap();
+    let payload = verify(&licence, &trusted, "device-a").unwrap();
+    let now = time::OffsetDateTime::now_utc();
+    assert!(matches!(
+        evaluate(&payload, now, now),
+        Ok(LicenceState::Active { days_left: 29 | 30 })
+    ));
+
+    let response = send(&db.app, renew(&token, "device-b")).await;
+    assert_eq!(response.status(), StatusCode::PAYMENT_REQUIRED);
+
+    let device_b: i64 = sqlx_core::query_scalar::query_scalar(
+        "SELECT id FROM pharmacy_devices WHERE name='Counter PC' ORDER BY id DESC LIMIT 1",
+    )
+    .fetch_one(&db.app.pool)
+    .await
+    .unwrap();
+    db.app.extend_device(device_b, 30).await.unwrap();
+    let response = send(&db.app, renew(&token, "device-b")).await;
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let audits: i64 = sqlx_core::query_scalar::query_scalar("SELECT COUNT(*) FROM audit_log")
+        .fetch_one(&db.app.pool)
+        .await
+        .unwrap();
+    assert_eq!(audits, 3);
+    db.drop_db().await;
+}

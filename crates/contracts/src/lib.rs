@@ -3,6 +3,7 @@ pub mod catalog;
 pub mod dashboard;
 pub mod history;
 pub mod inventory;
+pub mod licence;
 pub mod purchase;
 pub mod sale;
 pub mod stock;

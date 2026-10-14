@@ -26,6 +26,7 @@ pub fn router(app: AppState) -> Router {
         .route("/api/v1/medicines", get(api::full_medicines))
         .route("/api/v1/medicines/changes", get(api::medicine_changes))
         .route("/api/v1/sync", post(api::synchronize))
+        .route("/api/v1/licence/renew", post(api::renew_licence))
         .route_layer(from_fn_with_state(
             app.clone(),
             middleware::require_api_pharmacy,

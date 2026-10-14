@@ -91,3 +91,11 @@ pub async fn synchronize(
 ) -> Result<Json<SyncResponse>, AppError> {
     app.synchronize(&pharmacy, request).await.map(Json)
 }
+
+pub async fn renew_licence(
+    State(app): State<AppState>,
+    Extension(pharmacy): Extension<PharmacyAccount>,
+    Json(input): Json<contracts::licence::LicenceRenewInput>,
+) -> Result<Json<contracts::licence::SignedLicence>, AppError> {
+    app.renew_licence(&pharmacy, input).await.map(Json)
+}
