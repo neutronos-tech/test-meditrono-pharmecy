@@ -105,7 +105,17 @@ fn stock_health<'a>(summary: &Dashboard) -> Element<'a, Message> {
     container(
         column![
             section_title("Stock health"),
-            container(ring(healthy, "Well stocked".into(), 170.0)).center_x(Length::Fill),
+            container(ring(
+                healthy,
+                if stocked == 0 {
+                    "No stock yet"
+                } else {
+                    "Well stocked"
+                }
+                .into(),
+                170.0
+            ))
+            .center_x(Length::Fill),
             risk(
                 summary.low_stock_medicines,
                 "Low stock medicines",

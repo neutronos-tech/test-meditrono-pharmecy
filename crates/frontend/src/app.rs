@@ -20,12 +20,22 @@ const QUALIFIER: &str = "com";
 const ORGANIZATION: &str = "Pharmacy";
 const APPLICATION: &str = "Pharmacy";
 
-/// Debug builds only: when `PHARMACY_DEV_TOKEN` is set and nothing is saved,
-/// remember the developer account so the app skips the login screen.
+/// Debug builds only: when `PHARMACY_DEV_TOKEN` is set, remember the developer
+/// account so the app skips the login screen. A saved developer sign-in with an
+/// older token is replaced, since the server only accepts the current one; a
+/// real pharmacy's saved sign-in is left alone.
 #[cfg(debug_assertions)]
 fn seed_dev_login(mut backend: Backend) -> Backend {
     use contracts::auth::dev;
-    if let (Ok(token), Ok(None)) = (std::env::var(dev::TOKEN_ENV), backend.saved_remote_auth()) {
+    let Ok(token) = std::env::var(dev::TOKEN_ENV) else {
+        return backend;
+    };
+    let replace = match backend.saved_remote_auth() {
+        Ok(None) => true,
+        Ok(Some(saved)) => saved.pharmacy.id == dev::ACCOUNT_ID && saved.session_token != token,
+        Err(_) => false,
+    };
+    if replace {
         let _ = backend.save_remote_auth(&PharmacyLoginResponse {
             pharmacy: PharmacyAccount {
                 id: dev::ACCOUNT_ID,
