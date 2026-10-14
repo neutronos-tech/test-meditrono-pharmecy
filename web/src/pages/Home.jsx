@@ -2,8 +2,8 @@ import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ArrowUpRight, Barcode, CloudCheck, Package, WifiSlash } from "@phosphor-icons/react";
 import { Laptop } from "../Mock.jsx";
-import { Badge, Counter, ParallaxImg, Reveal, ScaleIn, Words } from "../motion.jsx";
-import { Eyebrow, IMAGES, Link, SITE, WRAP } from "../ui.jsx";
+import { Badge, Counter, Magnetic, ParallaxImg, Reveal, Rise3D, Tilt, Words } from "../motion.jsx";
+import { Eyebrow, IMAGES, Link, Mark, SITE, WRAP } from "../ui.jsx";
 
 const FACTS = [
   ["30", "days of selling with no internet"],
@@ -38,35 +38,62 @@ function Hero({ go }) {
   const ref = useRef(null);
   useLayoutEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const cleanups = [];
     const ctx = gsap.context(() => {
       const intro = gsap.timeline({ defaults: { ease: "expo.out" } });
       intro
-        .from("[data-hero-img]", { scale: 1.18, duration: 2.2 })
-        .from("[data-hero-word]", { yPercent: 110, duration: 1.4, stagger: 0.08 }, 0.25)
-        .from("[data-hero-up]", { y: 30, autoAlpha: 0, duration: 1.2, stagger: 0.1 }, 0.7);
+        .fromTo("[data-hero-img]", { scale: 1.2 }, { scale: 1.06, duration: 2.2 })
+        .from("[data-hero-word]", { yPercent: 110, rotateX: -80, transformOrigin: "50% 100%", transformPerspective: 1000, duration: 1.5, stagger: 0.08 }, 0.25)
+        .from("[data-hero-up]", { y: 30, autoAlpha: 0, duration: 1.2, stagger: 0.1 }, 0.7)
+        .from("[data-hero-chip]", { y: 60, rotateX: 40, autoAlpha: 0, transformPerspective: 800, duration: 1.4, stagger: 0.15 }, 0.9);
+      // Layered depth: each layer follows the pointer by a different amount.
+      if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+        const layers = gsap.utils.toArray("[data-depth]").map((el) => ({
+          depth: Number(el.dataset.depth),
+          x: gsap.quickTo(el, "x", { duration: 1, ease: "power3.out" }),
+          y: gsap.quickTo(el, "y", { duration: 1, ease: "power3.out" }),
+        }));
+        const move = (event) => {
+          const px = event.clientX / window.innerWidth - 0.5;
+          const py = event.clientY / window.innerHeight - 0.5;
+          layers.forEach((layer) => {
+            layer.x(px * layer.depth);
+            layer.y(py * layer.depth);
+          });
+        };
+        const section = ref.current;
+        section.addEventListener("pointermove", move);
+        cleanups.push(() => section.removeEventListener("pointermove", move));
+      }
+      gsap.utils.toArray("[data-hero-chip]").forEach((chip, index) => {
+        gsap.to(chip, { yPercent: index ? 10 : -10, duration: 3 + index, ease: "sine.inOut", yoyo: true, repeat: -1 });
+      });
       gsap.to("[data-hero-img]", {
         yPercent: 7,
         ease: "none",
         scrollTrigger: { trigger: ref.current, start: "top top", end: "bottom top", scrub: true },
       });
     }, ref);
-    return () => ctx.revert();
+    return () => {
+      cleanups.forEach((cleanup) => cleanup());
+      ctx.revert();
+    };
   }, []);
   const words = ["Calm", "care,", "every", "counter."];
   return (
     <section ref={ref} className="px-2 pt-2 sm:px-3 sm:pt-3">
-      <div className="relative min-h-[calc(100dvh-84px)] overflow-hidden rounded-[2rem] bg-brand-dark text-white">
-        <img data-hero-img src={IMAGES.hero} alt="Misty mountains above a pine forest" className="absolute inset-x-0 -top-[8%] h-[116%] w-full object-cover" />
+      <div className="relative min-h-[calc(100dvh-124px)] overflow-hidden rounded-[2rem] bg-brand-dark text-white">
+        <img data-hero-img data-depth="-18" src={IMAGES.hero} alt="Misty mountains above a pine forest" className="absolute inset-x-0 -top-[8%] h-[116%] w-full object-cover" />
         <div className="absolute inset-0 bg-brand-dark/45 mix-blend-multiply" />
         <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/80 via-transparent to-brand-dark/30" />
 
-        <div className={`${WRAP} relative flex min-h-[calc(100dvh-84px)] flex-col justify-between py-8`}>
+        <div className={`${WRAP} relative flex min-h-[calc(100dvh-124px)] flex-col justify-between py-8`}>
           <div data-hero-up className="flex items-center justify-between gap-4">
             <Eyebrow invert>Pharmacy software for Bangladesh</Eyebrow>
             <span className="hidden text-xs text-white/70 sm:block">Free pilot open in Naogaon</span>
           </div>
 
-          <h1 className="text-[17vw] font-semibold leading-[0.88] tracking-[-0.055em] md:text-[12.5vw] xl:text-[190px]" aria-label="Calm care, every counter.">
+          <h1 data-depth="14" className="relative text-[17vw] font-semibold leading-[0.88] tracking-[-0.055em] md:text-[12.5vw] xl:text-[190px]" aria-label="Calm care, every counter.">
             {words.map((word, index) => (
               <span key={word} aria-hidden="true" className="inline-block overflow-hidden pb-[0.06em] align-bottom">
                 <span data-hero-word className={`inline-block ${index > 1 ? "font-light text-brand-light" : ""}`}>{word}&nbsp;</span>
@@ -74,21 +101,33 @@ function Hero({ go }) {
             ))}
           </h1>
 
+          <div className="pointer-events-none absolute right-[6%] top-[22%] hidden flex-col items-end gap-4 lg:flex" data-depth="36">
+            <div data-hero-chip className="rounded-2xl border border-white/20 bg-white/10 px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_30px_60px_-30px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+              <p className="text-xs text-white/70">Today's sales</p>
+              <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">৳18,460</p>
+            </div>
+            <div data-hero-chip className="mr-16 flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_30px_60px_-30px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-brand-light" />
+              <p className="text-sm">Offline. Everything saved.</p>
+            </div>
+          </div>
+
           <div className="grid items-end gap-6 md:grid-cols-12">
             <div data-hero-up className="flex max-w-md items-center gap-4 rounded-[1.5rem] border border-white/15 bg-white/10 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-xl md:col-span-6 lg:col-span-5">
               <img src={IMAGES.shelves} alt="" className="h-24 w-24 shrink-0 rounded-[1rem] object-cover" />
               <div className="pr-2">
                 <p className="text-sm leading-snug text-white/85">Sales, stock and expiry on your shop computer. Works without internet.</p>
-                <Link to="/signup" go={go} className="group mt-3 inline-flex items-center gap-2 rounded-full bg-white py-1.5 pl-4 pr-1.5 text-sm font-medium text-brand-dark">
-                  Start your free month <ArrowButton dark />
-                </Link>
+                <Magnetic className="mt-3">
+                  <Link to="/signup" go={go} className="group inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-white py-1.5 pl-4 pr-1.5 text-sm font-medium text-brand-dark">
+                    Start your free month <ArrowButton dark />
+                  </Link>
+                </Magnetic>
               </div>
             </div>
             <div data-hero-up className="hidden justify-self-end md:col-span-3 md:col-start-10 md:block">
-              <div className="relative flex h-32 w-32 items-center justify-center rounded-full border border-white/20 bg-white/5 backdrop-blur-md">
-                <Badge text="Offline first · Made for Bangladesh · " className="absolute inset-2 text-white/80" />
-                <span className="text-2xl font-semibold">M.</span>
-              </div>
+              <Badge text="Offline first · Made for Bangladesh · " className="h-32 w-32 rounded-full border border-white/20 bg-white/5 text-white/80 backdrop-blur-md">
+                <Mark className="h-7 w-auto text-white" />
+              </Badge>
             </div>
           </div>
         </div>
@@ -125,7 +164,7 @@ export default function Home({ go }) {
         </div>
         <Reveal className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {AREAS.map((area) => (
-            <Link key={area.label} to="/features" go={go} className="group relative block aspect-[4/5] overflow-hidden rounded-[1.75rem] bg-cream">
+            <Tilt key={area.label} className="rounded-[1.75rem]"><Link to="/features" go={go} className="group relative block aspect-[4/5] overflow-hidden rounded-[1.75rem] bg-cream">
               <img src={area.image} alt={area.alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-[1400ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]" />
               <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/75 via-brand-dark/5 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-5 text-white">
@@ -135,7 +174,7 @@ export default function Home({ go }) {
                 </div>
                 <ArrowButton />
               </div>
-            </Link>
+            </Link></Tilt>
           ))}
         </Reveal>
       </section>
@@ -166,9 +205,9 @@ export default function Home({ go }) {
               <p className="text-muted">The desktop app, as it looks on your shop computer.</p>
             </Reveal>
           </div>
-          <ScaleIn className="mx-auto mt-16 max-w-[1080px]">
+          <Rise3D className="mx-auto mt-16 max-w-[1080px]">
             <Laptop />
-          </ScaleIn>
+          </Rise3D>
           <Reveal className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {[
               [WifiSlash, "Works offline", "Sell for up to 30 days without internet."],
