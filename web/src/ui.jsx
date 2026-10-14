@@ -27,6 +27,7 @@ export const IMAGES = {
   hands: brand("hands"),
   sprout: brand("sprout"),
   sign: brand("sign"),
+  hero: brand("hero"),
 };
 
 /** The "M." mark from the brand board. */

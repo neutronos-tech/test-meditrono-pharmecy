@@ -1,3 +1,5 @@
+import { useLayoutEffect, useRef } from "react";
+import gsap from "gsap";
 import { ArrowUpRight, Barcode, CloudCheck, Package, WifiSlash } from "@phosphor-icons/react";
 import { Laptop } from "../Mock.jsx";
 import { Badge, Counter, ParallaxImg, Reveal, ScaleIn, Words } from "../motion.jsx";
@@ -32,44 +34,74 @@ function ArrowButton({ dark = false }) {
   );
 }
 
-export default function Home({ go }) {
+function Hero({ go }) {
+  const ref = useRef(null);
+  useLayoutEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const ctx = gsap.context(() => {
+      const intro = gsap.timeline({ defaults: { ease: "expo.out" } });
+      intro
+        .from("[data-hero-img]", { scale: 1.18, duration: 2.2 })
+        .from("[data-hero-word]", { yPercent: 110, duration: 1.4, stagger: 0.08 }, 0.25)
+        .from("[data-hero-up]", { y: 30, autoAlpha: 0, duration: 1.2, stagger: 0.1 }, 0.7);
+      gsap.to("[data-hero-img]", {
+        yPercent: 7,
+        ease: "none",
+        scrollTrigger: { trigger: ref.current, start: "top top", end: "bottom top", scrub: true },
+      });
+    }, ref);
+    return () => ctx.revert();
+  }, []);
+  const words = ["Calm", "care,", "every", "counter."];
   return (
-    <main>
-      {/* Hero */}
-      <section className={`${WRAP} pt-12 lg:pt-16`}>
-        <Reveal className="flex items-center justify-between">
-          <Eyebrow>Pharmacy software for Bangladesh</Eyebrow>
-          <span className="hidden text-xs text-muted sm:block">Free pilot open in Naogaon</span>
-        </Reveal>
-        <Words
-          as="h1"
-          text="Care at the counter, made simple."
-          accent="made simple."
-          className="mt-8 max-w-[15ch] text-[13vw] font-semibold leading-[0.95] tracking-[-0.05em] text-brand-dark sm:text-7xl lg:text-[112px]"
-        />
-        <div className="mt-12 grid gap-10 pb-20 md:grid-cols-12 md:gap-6">
-          <Reveal className="md:col-span-4 md:pt-4" delay={0.3}>
-            <p className="max-w-[40ch] text-lg leading-relaxed text-muted">
-              Sales, stock and expiry on your shop computer. It keeps working without internet and keeps a safe copy in the cloud.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-5">
-              <Link to="/signup" go={go} className="group inline-flex items-center gap-3 rounded-full bg-brand-dark py-2 pl-6 pr-2 text-[15px] font-medium text-white transition active:scale-[0.98]">
-                Start your free month <ArrowButton />
-              </Link>
-              <a href={SITE.downloadUrl} className="text-[15px] text-brand underline-offset-4 hover:underline">Download for Windows</a>
+    <section ref={ref} className="px-2 pt-2 sm:px-3 sm:pt-3">
+      <div className="relative min-h-[calc(100dvh-84px)] overflow-hidden rounded-[2rem] bg-brand-dark text-white">
+        <img data-hero-img src={IMAGES.hero} alt="Misty mountains above a pine forest" className="absolute inset-x-0 -top-[8%] h-[116%] w-full object-cover" />
+        <div className="absolute inset-0 bg-brand-dark/45 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/80 via-transparent to-brand-dark/30" />
+
+        <div className={`${WRAP} relative flex min-h-[calc(100dvh-84px)] flex-col justify-between py-8`}>
+          <div data-hero-up className="flex items-center justify-between gap-4">
+            <Eyebrow invert>Pharmacy software for Bangladesh</Eyebrow>
+            <span className="hidden text-xs text-white/70 sm:block">Free pilot open in Naogaon</span>
+          </div>
+
+          <h1 className="text-[17vw] font-semibold leading-[0.88] tracking-[-0.055em] md:text-[12.5vw] xl:text-[190px]" aria-label="Calm care, every counter.">
+            {words.map((word, index) => (
+              <span key={word} aria-hidden="true" className="inline-block overflow-hidden pb-[0.06em] align-bottom">
+                <span data-hero-word className={`inline-block ${index > 1 ? "font-light text-brand-light" : ""}`}>{word}&nbsp;</span>
+              </span>
+            ))}
+          </h1>
+
+          <div className="grid items-end gap-6 md:grid-cols-12">
+            <div data-hero-up className="flex max-w-md items-center gap-4 rounded-[1.5rem] border border-white/15 bg-white/10 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-xl md:col-span-6 lg:col-span-5">
+              <img src={IMAGES.shelves} alt="" className="h-24 w-24 shrink-0 rounded-[1rem] object-cover" />
+              <div className="pr-2">
+                <p className="text-sm leading-snug text-white/85">Sales, stock and expiry on your shop computer. Works without internet.</p>
+                <Link to="/signup" go={go} className="group mt-3 inline-flex items-center gap-2 rounded-full bg-white py-1.5 pl-4 pr-1.5 text-sm font-medium text-brand-dark">
+                  Start your free month <ArrowButton dark />
+                </Link>
+              </div>
             </div>
-          </Reveal>
-          <div className="relative grid grid-cols-2 gap-3 md:col-span-8 md:col-start-5 md:grid-cols-[1.1fr_1fr]">
-            <ParallaxImg src={IMAGES.shelves} alt="A bright pharmacy with stocked shelves" className="row-span-2 aspect-[3/4] md:aspect-auto md:h-full" />
-            <ParallaxImg src={IMAGES.capsules} alt="Green and white capsules on a counter" className="aspect-[4/3]" />
-            <ParallaxImg src={IMAGES.leaf} alt="Fresh green leaves" className="aspect-[4/3]" />
-            <div className="absolute -left-10 top-1/2 hidden h-28 w-28 -translate-y-1/2 items-center justify-center rounded-full bg-white text-brand-dark shadow-[0_20px_40px_-20px_rgba(22,53,42,0.4)] md:flex">
-              <Badge text="Offline first · Made for Bangladesh · " className="absolute inset-1.5" />
-              <span className="text-lg font-semibold">M.</span>
+            <div data-hero-up className="hidden justify-self-end md:col-span-3 md:col-start-10 md:block">
+              <div className="relative flex h-32 w-32 items-center justify-center rounded-full border border-white/20 bg-white/5 backdrop-blur-md">
+                <Badge text="Offline first · Made for Bangladesh · " className="absolute inset-2 text-white/80" />
+                <span className="text-2xl font-semibold">M.</span>
+              </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
+
+export default function Home({ go }) {
+  return (
+    <main>
+      {/* Hero: full-bleed photo, inerimbd style */}
+      <Hero go={go} />
 
       {/* Facts */}
       <section className="border-y border-line">

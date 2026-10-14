@@ -30,6 +30,9 @@ export default function App() {
   const Page = pages[path.replace(/\/$/, "") || "/"] ?? NotFound;
   return (
     <div className="w-full overflow-x-clip">
+      <Link to="/signup" go={go} className="block bg-brand-dark px-4 py-2 text-center text-xs text-white/85 transition hover:text-white">
+        Free pilot in Naogaon. Your first month is free. <span className="underline underline-offset-4">Join now</span>
+      </Link>
       <Nav go={go} path={path} />
       <Page key={path} go={go} />
       <Footer go={go} />
