@@ -12,18 +12,44 @@ export const SITE = {
   downloadUrl: "https://github.com/neutronos-tech/test-meditrono-pharmecy/releases/latest",
 };
 
-// Free-licence photos from Unsplash (unsplash.com/license).
-const unsplash = (id, w = 1800) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
-export const PHOTOS = {
-  pharmacist: unsplash("photo-1580281657527-47f249e8f4df"),
-  counsel: unsplash("photo-1576091358783-a212ec293ff3"),
-  shelves: unsplash("photo-1642055514517-7b52288890ec"),
-  inventory: unsplash("photo-1764795850513-fa8a469a4600"),
-  pills: unsplash("photo-1587854692152-cbe660dbde88", 1200),
-  sign: unsplash("photo-1622230208995-0f26eba75875"),
-  vials: unsplash("photo-1576671081837-49000212a370", 1200),
-  capsules: unsplash("photo-1471864190281-a93a3070b6de", 1200),
+// Brand images from the M. Pharmacy board (web/public/brand). Replace a file
+// with a full-size original of the same name to sharpen it; no code change.
+const brand = (name) => `/brand/${name}.webp`;
+export const IMAGES = {
+  valley: brand("valley"),
+  capsules: brand("capsules"),
+  shelves: brand("shelves"),
+  doctor: brand("doctor-tablet"),
+  leaf: brand("leaf"),
+  building: brand("building"),
+  scanner: brand("scanner"),
+  laptop: brand("laptop"),
+  hands: brand("hands"),
+  sprout: brand("sprout"),
+  sign: brand("sign"),
 };
+
+/** The "M." mark from the brand board. */
+export function Mark({ className = "h-6 w-auto" }) {
+  return (
+    <svg viewBox="0 0 46 28" className={className} fill="currentColor" aria-hidden="true">
+      <path d="M0 28V0h9.5L18 13.5 26.5 0H36v28h-8.5V13L18 24.5 8.5 13v15z" />
+      <rect x="38.5" y="20" width="6" height="8" rx="1.5" />
+    </svg>
+  );
+}
+
+export function Logo({ invert = false, small = false }) {
+  return (
+    <span className={`flex items-center gap-2.5 ${invert ? "text-white" : "text-brand-dark"}`}>
+      <Mark className={small ? "h-5 w-auto" : "h-6 w-auto"} />
+      <span className="leading-none">
+        <span className="block text-[15px] font-semibold tracking-tight">M. Pharmacy</span>
+        <span className={`mt-1 block text-[10px] tracking-[0.12em] ${invert ? "text-white/60" : "text-muted"}`}>Part of MEDITRONO</span>
+      </span>
+    </span>
+  );
+}
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -176,7 +202,7 @@ export function Counter({ value, className = "" }) {
     return () => observer.disconnect();
   }, [value]);
   return (
-    <span ref={ref} className={`font-mono tabular-nums ${className}`}>
+    <span ref={ref} className={`tabular-nums ${className}`}>
       {value}
     </span>
   );

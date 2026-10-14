@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { List, WhatsappLogo, X } from "@phosphor-icons/react";
 import { getToken } from "./api.js";
-import { BRAND, Link, SITE, Wordmark, dark, usePath } from "./ui.jsx";
+import { BRAND, Link, Logo, SITE, Wordmark, dark, usePath } from "./ui.jsx";
 import Home from "./pages/Home.jsx";
 import { About, Contact, Features, Pricing } from "./pages/Marketing.jsx";
 import { Auth, Dashboard } from "./pages/Account.jsx";
@@ -48,10 +48,8 @@ function Nav({ go, path }) {
   return (
     <header className="sticky top-0 z-20 border-b border-line/70 bg-white/80 backdrop-blur-xl">
       <div className="flex items-center justify-between px-4 py-3.5 sm:px-8 lg:px-12">
-        <Link to="/" go={go} className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight">
-          <img src="/icon.svg" alt="" className="h-7 w-7" />
-          <span>{BRAND}</span>
-          <span className="hidden rounded-full bg-cream px-2 py-0.5 text-[10px] font-medium text-muted sm:inline">by MEDITRONO</span>
+        <Link to="/" go={go} aria-label="M. Pharmacy home">
+          <Logo />
         </Link>
         <nav className="hidden items-center gap-1 text-[13px] md:flex">
           {NAV.map(([to, label]) => (
@@ -96,7 +94,8 @@ function Footer({ go }) {
     <footer className="mt-24 overflow-hidden bg-ink px-4 pb-8 pt-16 text-white sm:px-8 lg:px-12">
       <div className="grid gap-10 md:grid-cols-[2fr_1fr_1fr]">
         <div>
-          <p className="max-w-sm text-sm leading-relaxed text-white/60">
+          <Logo invert />
+          <p className="mt-6 max-w-sm text-sm leading-relaxed text-white/60">
             {BRAND} is part of MEDITRONO, the digital health infrastructure company of Bangladesh.
           </p>
           {SITE.contactEmail && (
@@ -119,7 +118,6 @@ function Footer({ go }) {
       <Wordmark className="mt-16 block whitespace-nowrap text-[13.5vw] text-white/[0.07]" />
       <div className="mt-6 flex flex-wrap justify-between gap-3 border-t border-white/10 pt-6 text-xs text-white/40">
         <span>© {new Date().getFullYear()} MEDITRONO. All rights reserved.</span>
-        <span>Photos: Unsplash</span>
       </div>
     </footer>
   );

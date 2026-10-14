@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, taka } from "../api.js";
 import { Laptop } from "../Mock.jsx";
-import { Eyebrow, Link, PageHead, SITE, Tag, dark, light } from "../ui.jsx";
+import { Eyebrow, IMAGES, Link, PageHead, SITE, Tag, dark, light } from "../ui.jsx";
 
 const FEATURE_GROUPS = [
   {
@@ -49,6 +49,10 @@ export function Features({ go }) {
       <div className="mx-auto mb-16 max-w-[1000px] px-4 sm:px-8">
         <Laptop />
       </div>
+      <div className="mb-16 grid max-w-[1100px] gap-3 px-4 sm:grid-cols-2 sm:px-8 lg:px-12">
+        <img src={IMAGES.shelves} alt="Pharmacy shelves" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
+        <img src={IMAGES.scanner} alt="Scanning a medicine box" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
+      </div>
       <div className="space-y-3 px-2 sm:px-3">
         {FEATURE_GROUPS.map((group, index) => (
           <section key={group.title} className={`rounded-[2rem] p-6 sm:p-10 ${index === 1 ? "bg-brand text-white" : "bg-cream"}`}>
@@ -95,6 +99,10 @@ export function Pricing({ go }) {
   return (
     <main>
       <PageHead eyebrow="Pricing" title="One simple price per computer." muted="First month free. No card needed." />
+      <div className="mb-16 grid max-w-[1100px] gap-3 px-4 sm:grid-cols-2 sm:px-8 lg:px-12">
+        <img src={IMAGES.capsules} alt="Green and white capsules" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
+        <img src={IMAGES.doctor} alt="A pharmacist using a tablet" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
+      </div>
       <section className="grid gap-3 px-4 pb-10 sm:px-8 lg:px-12 md:grid-cols-3">
         {plans === null && <p className="text-muted">Loading prices…</p>}
         {plans?.length === 0 && (
@@ -148,9 +156,11 @@ export function About({ go }) {
     <main>
       <PageHead eyebrow="Part of MEDITRONO" title="One piece of Bangladesh's digital health infrastructure." muted="Built first for the people behind the pharmacy counter." />
       <section className="px-2 sm:px-3">
-        <div className="h-[360px] rounded-[2rem] bg-ink sm:h-[520px]">
-          <div className="flex h-full items-end p-6 text-white sm:p-10">
-            <p className="max-w-xl text-xl font-medium sm:text-3xl">MEDITRONO connects patients, doctors and pharmacies. M. Pharmacy is where it starts.</p>
+        <div className="grid gap-3 md:grid-cols-[minmax(0,560px)_minmax(0,560px)_1fr]">
+          <img src={IMAGES.building} alt="A modern healthcare building" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
+          <img src={IMAGES.valley} alt="Sunrise over green hills and a river" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
+          <div className="flex items-end rounded-[1.75rem] bg-brand-dark p-8 text-white">
+            <p className="text-xl font-medium leading-snug">MEDITRONO connects patients, doctors and pharmacies. M. Pharmacy is where it starts.</p>
           </div>
         </div>
       </section>
@@ -181,6 +191,10 @@ export function Contact({ go }) {
   return (
     <main>
       <PageHead eyebrow="Contact" title="Let's set up your pharmacy." muted="We'll help you load your stock and get started." />
+      <div className="mb-16 grid max-w-[1100px] gap-3 px-4 sm:grid-cols-2 sm:px-8 lg:px-12">
+        <img src={IMAGES.hands} alt="Two hands resting together" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
+        <img src={IMAGES.sprout} alt="A young plant growing on stone" loading="lazy" className="aspect-[4/3] w-full rounded-[1.75rem] object-cover" />
+      </div>
       <section className="grid gap-3 px-4 pb-20 sm:px-8 lg:px-12 md:grid-cols-2">
         <div className="rounded-[2rem] bg-brand p-8 text-white">
           <p className="text-sm text-white/50">Fastest way</p>

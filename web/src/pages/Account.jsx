@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, getToken, setToken } from "../api.js";
 import { Phone } from "../Mock.jsx";
-import { Eyebrow, Link, SITE, dark, light } from "../ui.jsx";
+import { Eyebrow, IMAGES, Link, SITE, dark, light } from "../ui.jsx";
 
 export const field = "mt-1 w-full rounded-2xl border border-line bg-cream px-4 py-3 outline-none focus:border-brand";
 
@@ -32,11 +32,12 @@ export function Auth({ mode, go }) {
 
   return (
     <main className="grid gap-3 p-2 sm:p-3 md:grid-cols-2">
-      <div className="hidden min-h-[640px] flex-col items-center justify-end overflow-hidden rounded-[2rem] bg-cream px-10 pt-16 md:flex">
+      <div className="hidden min-h-[640px] flex-col items-center justify-end overflow-hidden rounded-[2rem] bg-brand-soft px-10 pt-16 md:flex">
         <p className="max-w-sm text-center text-3xl font-semibold tracking-tight">
           {signup ? "Your first month is on us." : "Welcome back to the counter."}
         </p>
-        <Phone className="-mb-24 mt-12 w-[260px]" />
+        <img src={signup ? IMAGES.sprout : IMAGES.leaf} alt="" className="mt-10 aspect-[4/3] w-full max-w-[520px] rounded-[1.75rem] object-cover" />
+        <Phone className="-mb-24 -mt-24 w-[220px]" />
       </div>
       <form onSubmit={submit} className="flex flex-col justify-center px-4 py-12 sm:px-12">
         <Eyebrow>{signup ? "Create account" : "Sign in"}</Eyebrow>

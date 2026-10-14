@@ -1,20 +1,20 @@
 @import "tailwindcss";
 
-/* Three colours only: white, green, and deep green. Every token below is a
-   shade of one of them. */
+/* Three colours only, taken from the M. Pharmacy brand board: white, green
+   and deep green. Every token below is a shade of one of them. */
 @theme {
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, monospace;
-  --color-brand: #2f8a63;
-  --color-brand-dark: #236b4c;
-  --color-brand-light: #7cc4a0;
-  --color-brand-soft: #e8f4ed;
-  --color-cream: #f3f8f5;
-  --color-line: #dce9e2;
-  --color-ink: #0c2118;
-  --color-night: #0c2118;
-  --color-muted: #5a7166;
-  --color-gold: #7cc4a0;
+  --color-brand: #2f6b4f;
+  --color-brand-dark: #1f4a3a;
+  --color-brand-light: #a9c7b5;
+  --color-brand-soft: #eaf2ed;
+  --color-cream: #f4f7f5;
+  --color-line: #dfe8e2;
+  --color-ink: #16352a;
+  --color-night: #16352a;
+  --color-muted: #5f7268;
+  --color-gold: #a9c7b5;
   --color-danger: #b4432f;
 }
 
@@ -28,19 +28,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-@keyframes marquee {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.marquee {
-  animation: marquee 38s linear infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .marquee {
-    animation: none;
+  * {
+    transition: none !important;
   }
 }
-
