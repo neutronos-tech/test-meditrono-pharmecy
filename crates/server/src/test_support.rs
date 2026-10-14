@@ -56,6 +56,7 @@ pub async fn fresh_db() -> TestDb {
     app.licence_key = Some(std::sync::Arc::new(crate::licence::LicenceKey::from_seed(
         1, [9; 32],
     )));
+    app.admin_token_hash = Some(crate::admin::token_hash(crate::tests::ADMIN_TOKEN).unwrap());
     TestDb { app, name, admin }
 }
 

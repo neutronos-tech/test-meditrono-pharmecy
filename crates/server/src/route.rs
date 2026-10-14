@@ -1,4 +1,5 @@
 use crate::{
+    admin,
     app::AppState,
     auth::middleware,
     http::{api, site},
@@ -8,7 +9,7 @@ use axum::http::{HeaderValue, Method, header};
 use axum::{
     Router,
     middleware::from_fn_with_state,
-    routing::{get, post},
+    routing::{get, post, put},
 };
 use tower_http::{
     cors::{AllowOrigin, CorsLayer},
@@ -39,6 +40,26 @@ pub fn router(app: AppState) -> Router {
         ))
         .with_state(app.clone());
 
+    let admin_api = Router::new()
+        .route("/api/v1/admin/plans", get(admin::plans))
+        .route("/api/v1/admin/plans/{code}", put(admin::save_plan))
+        .route("/api/v1/admin/customers", get(admin::customers))
+        .route(
+            "/api/v1/admin/customers/{id}/devices",
+            get(admin::customer_devices),
+        )
+        .route(
+            "/api/v1/admin/devices/{id}/extend",
+            post(admin::extend_device),
+        )
+        .route(
+            "/api/v1/admin/devices/{id}/active",
+            post(admin::set_device_active),
+        )
+        .route("/api/v1/admin/audit", get(admin::audit_log))
+        .route_layer(from_fn_with_state(app.clone(), admin::require_admin))
+        .with_state(app.clone());
+
     Router::new()
         .route("/health", get(api::health))
         .route("/login", get(site::login_page).post(site::login))
@@ -47,6 +68,7 @@ pub fn router(app: AppState) -> Router {
         .route("/api/v1/plans", get(saas::plans))
         .merge(browser_routes)
         .merge(protected_api)
+        .merge(admin_api)
         .layer(cors())
         .layer(TraceLayer::new_for_http())
         .with_state(app)
@@ -65,6 +87,6 @@ fn cors() -> CorsLayer {
         .collect();
     CorsLayer::new()
         .allow_origin(AllowOrigin::list(origins))
-        .allow_methods([Method::GET, Method::POST, Method::DELETE])
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
 }

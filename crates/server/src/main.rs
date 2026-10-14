@@ -1,3 +1,4 @@
+mod admin;
 mod app;
 mod auth;
 mod error;
@@ -32,6 +33,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             licence::KEY_ENV
         );
     }
+    if let Ok(token) = std::env::var(admin::TOKEN_ENV) {
+        app.admin_token_hash = Some(admin::token_hash(&token)?);
+    }
     #[cfg(debug_assertions)]
     if let Ok(token) = std::env::var(contracts::auth::dev::TOKEN_ENV) {
         app.enable_dev_token(&token).await?;
@@ -48,7 +52,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let (Some(device_id), Some(days)) = (args.next(), args.next()) else {
             return Err("usage: server extend-device <device-id> <days>".into());
         };
-        let paid_until = app.extend_device(device_id.parse()?, days.parse()?).await?;
+        let paid_until = app
+            .extend_device(device_id.parse()?, days.parse()?, "cli")
+            .await?;
         println!("Device {device_id} is paid until {paid_until}.");
         return Ok(());
     }

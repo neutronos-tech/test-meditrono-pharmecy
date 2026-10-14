@@ -165,7 +165,12 @@ impl AppState {
 
     /// Manual activation (until the payment gateway is live): adds `days`
     /// to a device, counting from today if it had already lapsed.
-    pub async fn extend_device(&self, device_id: i64, days: i64) -> Result<OffsetDateTime, String> {
+    pub async fn extend_device(
+        &self,
+        device_id: i64,
+        days: i64,
+        source: &str,
+    ) -> Result<OffsetDateTime, String> {
         if !(1..=3660).contains(&days) {
             return Err("days must be between 1 and 3660".into());
         }
@@ -182,11 +187,12 @@ impl AppState {
         let paid_until: OffsetDateTime = row.try_get("paid_until").map_err(|e| e.to_string())?;
         query(
             "INSERT INTO audit_log(pharmacy_id,actor,action,detail,source) \
-             VALUES($1,'owner','device.extended',jsonb_build_object('device_id',$2::bigint,'days',$3::bigint),'cli')",
+             VALUES($1,'owner','device.extended',jsonb_build_object('device_id',$2::bigint,'days',$3::bigint),$4)",
         )
         .bind(row.try_get::<uuid::Uuid, _>("pharmacy_id").map_err(|e| e.to_string())?)
         .bind(device_id)
         .bind(days)
+        .bind(source)
         .execute(&self.pool)
         .await
         .map_err(|error| format!("Could not write the audit log: {error}"))?;

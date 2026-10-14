@@ -16,6 +16,7 @@ use uuid::Uuid;
 
 const USERNAME: &str = "pharmacy-one";
 const PASSWORD: &str = "correct horse";
+pub const ADMIN_TOKEN: &str = "owner-token-for-tests-0123456789abcdef";
 
 async fn send(app: &AppState, request: Request<Body>) -> Response<Body> {
     route::router(app.clone()).oneshot(request).await.unwrap()
@@ -388,7 +389,7 @@ async fn first_device_gets_a_trial_licence_and_second_device_must_pay() {
     .fetch_one(&db.app.pool)
     .await
     .unwrap();
-    db.app.extend_device(device_b, 30).await.unwrap();
+    db.app.extend_device(device_b, 30, "cli").await.unwrap();
     let response = send(&db.app, renew(&token, "device-b")).await;
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -438,5 +439,152 @@ async fn signup_creates_an_account_and_lists_plans_and_devices() {
     let devices: Vec<contracts::saas::Device> =
         serde_json::from_slice(&body_bytes(devices).await).unwrap();
     assert_eq!(devices.len(), 1);
+    db.drop_db().await;
+}
+
+fn admin(method: &str, uri: &str, token: &str, body: Option<serde_json::Value>) -> Request<Body> {
+    Request::builder()
+        .method(method)
+        .uri(uri)
+        .header(header::AUTHORIZATION, format!("Bearer {token}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(body.map_or_else(Body::empty, |b| Body::from(b.to_string())))
+        .unwrap()
+}
+
+#[tokio::test]
+async fn founder_cms_edits_prices_and_activates_devices() {
+    let db = fresh_db().await;
+    let wrong = send(
+        &db.app,
+        admin("GET", "/api/v1/admin/plans", "wrong-token", None),
+    )
+    .await;
+    assert_eq!(wrong.status(), StatusCode::UNAUTHORIZED);
+    let pharmacy_token = sign_in(&db.app).await;
+    let as_pharmacy = send(
+        &db.app,
+        admin("GET", "/api/v1/admin/plans", &pharmacy_token, None),
+    )
+    .await;
+    assert_eq!(as_pharmacy.status(), StatusCode::UNAUTHORIZED);
+
+    let plan = serde_json::json!({
+        "code": "standard", "name": "Standard", "monthly_price_paisa": 79900,
+        "yearly_price_paisa": 799900, "trial_days": 30, "ai_scan_cap": 100,
+        "active": true, "is_default": true
+    });
+    let saved = send(
+        &db.app,
+        admin(
+            "PUT",
+            "/api/v1/admin/plans/standard",
+            ADMIN_TOKEN,
+            Some(plan),
+        ),
+    )
+    .await;
+    assert_eq!(saved.status(), StatusCode::OK);
+    let public: Vec<contracts::saas::Plan> =
+        serde_json::from_slice(&body_bytes(send(&db.app, get("/api/v1/plans", None)).await).await)
+            .unwrap();
+    assert_eq!(public[0].monthly_price_paisa, 79900);
+
+    let no_default = serde_json::json!({
+        "code": "standard", "name": "Standard", "monthly_price_paisa": 0, "yearly_price_paisa": 0,
+        "trial_days": 30, "ai_scan_cap": 0, "active": false, "is_default": true
+    });
+    let refused = send(
+        &db.app,
+        admin(
+            "PUT",
+            "/api/v1/admin/plans/standard",
+            ADMIN_TOKEN,
+            Some(no_default),
+        ),
+    )
+    .await;
+    assert_eq!(refused.status(), StatusCode::BAD_REQUEST);
+
+    assert_eq!(
+        send(&db.app, renew(&pharmacy_token, "pc-1")).await.status(),
+        StatusCode::OK
+    );
+    let customers: Vec<serde_json::Value> = serde_json::from_slice(
+        &body_bytes(
+            send(
+                &db.app,
+                admin(
+                    "GET",
+                    "/api/v1/admin/customers?search=pharmacy",
+                    ADMIN_TOKEN,
+                    None,
+                ),
+            )
+            .await,
+        )
+        .await,
+    )
+    .unwrap();
+    assert_eq!(customers.len(), 1);
+    assert_eq!(customers[0]["paid_devices"], 1);
+    let id = customers[0]["id"].as_str().unwrap();
+    let devices: Vec<contracts::saas::Device> = serde_json::from_slice(
+        &body_bytes(
+            send(
+                &db.app,
+                admin(
+                    "GET",
+                    &format!("/api/v1/admin/customers/{id}/devices"),
+                    ADMIN_TOKEN,
+                    None,
+                ),
+            )
+            .await,
+        )
+        .await,
+    )
+    .unwrap();
+    let device = devices[0].id;
+    let off = send(
+        &db.app,
+        admin(
+            "POST",
+            &format!("/api/v1/admin/devices/{device}/active"),
+            ADMIN_TOKEN,
+            Some(serde_json::json!({"active": false})),
+        ),
+    )
+    .await;
+    assert_eq!(off.status(), StatusCode::OK);
+    assert_eq!(
+        send(&db.app, renew(&pharmacy_token, "pc-1")).await.status(),
+        StatusCode::FORBIDDEN
+    );
+    let extended = send(
+        &db.app,
+        admin(
+            "POST",
+            &format!("/api/v1/admin/devices/{device}/extend"),
+            ADMIN_TOKEN,
+            Some(serde_json::json!({"days": 30})),
+        ),
+    )
+    .await;
+    assert_eq!(extended.status(), StatusCode::OK);
+
+    let audit: Vec<serde_json::Value> = serde_json::from_slice(
+        &body_bytes(
+            send(
+                &db.app,
+                admin("GET", "/api/v1/admin/audit", ADMIN_TOKEN, None),
+            )
+            .await,
+        )
+        .await,
+    )
+    .unwrap();
+    assert_eq!(audit[0]["action"], "device.extended");
+    assert_eq!(audit[0]["source"], "admin");
     db.drop_db().await;
 }

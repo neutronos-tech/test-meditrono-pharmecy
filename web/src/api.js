@@ -28,10 +28,30 @@ export class ApiError extends Error {
   }
 }
 
-async function request(path, { method = "GET", body, auth = false } = {}) {
+const ADMIN_KEY = "meditrino.admin";
+
+export function getAdminToken() {
+  try {
+    return sessionStorage.getItem(ADMIN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setAdminToken(token) {
+  try {
+    if (token) sessionStorage.setItem(ADMIN_KEY, token);
+    else sessionStorage.removeItem(ADMIN_KEY);
+  } catch {
+    // Not persisted; the founder signs in again next time.
+  }
+}
+
+async function request(path, { method = "GET", body, auth = false, admin = false } = {}) {
   const headers = {};
   if (body) headers["Content-Type"] = "application/json";
   if (auth) headers.Authorization = `Bearer ${getToken()}`;
+  if (admin) headers.Authorization = `Bearer ${getAdminToken()}`;
   let response;
   try {
     response = await fetch(`${API_URL}${path}`, { method, headers, body: body && JSON.stringify(body) });
@@ -52,6 +72,21 @@ export const api = {
   me: () => request("/api/v1/auth/me", { auth: true }),
   devices: () => request("/api/v1/devices", { auth: true }),
   logout: () => request("/api/v1/auth/logout", { method: "POST", auth: true }),
+};
+
+export const adminApi = {
+  plans: () => request("/api/v1/admin/plans", { admin: true }),
+  savePlan: (plan) => request(`/api/v1/admin/plans/${encodeURIComponent(plan.code)}`, { method: "PUT", body: plan, admin: true }),
+  customers: (search, after) => {
+    const query = new URLSearchParams();
+    if (search) query.set("search", search);
+    if (after) query.set("after", after);
+    return request(`/api/v1/admin/customers?${query}`, { admin: true });
+  },
+  devices: (pharmacyId) => request(`/api/v1/admin/customers/${pharmacyId}/devices`, { admin: true }),
+  extend: (deviceId, days) => request(`/api/v1/admin/devices/${deviceId}/extend`, { method: "POST", body: { days }, admin: true }),
+  setActive: (deviceId, active) => request(`/api/v1/admin/devices/${deviceId}/active`, { method: "POST", body: { active }, admin: true }),
+  audit: (before) => request(`/api/v1/admin/audit${before ? `?before=${before}` : ""}`, { admin: true }),
 };
 
 export function taka(paisa) {

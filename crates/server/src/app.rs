@@ -14,6 +14,7 @@ use uuid::Uuid;
 pub struct AppState {
     pub pool: PgPool,
     pub licence_key: Option<std::sync::Arc<crate::licence::LicenceKey>>,
+    pub admin_token_hash: Option<[u8; 32]>,
     #[cfg(debug_assertions)]
     dev_token_hash: Option<[u8; 32]>,
 }
@@ -58,6 +59,7 @@ impl AppState {
         Self {
             pool,
             licence_key: None,
+            admin_token_hash: None,
             #[cfg(debug_assertions)]
             dev_token_hash: None,
         }
