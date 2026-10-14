@@ -12,6 +12,7 @@ pub enum AppError {
     Forbidden,
     NotFound,
     PaymentRequired,
+    Conflict,
     Unavailable,
     Internal,
 }
@@ -37,6 +38,7 @@ impl IntoResponse for AppError {
             }
             Self::Forbidden => (StatusCode::FORBIDDEN, "Request rejected.").into_response(),
             Self::NotFound => (StatusCode::NOT_FOUND, "Not found.").into_response(),
+            Self::Conflict => (StatusCode::CONFLICT, "That username is taken.").into_response(),
             Self::PaymentRequired => (
                 StatusCode::PAYMENT_REQUIRED,
                 "Subscription payment required.",

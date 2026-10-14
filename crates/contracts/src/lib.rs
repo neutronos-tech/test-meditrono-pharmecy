@@ -5,6 +5,7 @@ pub mod history;
 pub mod inventory;
 pub mod licence;
 pub mod purchase;
+pub mod saas;
 pub mod sale;
 pub mod stock;
 pub mod sync;

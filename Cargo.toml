@@ -37,7 +37,7 @@ askama = "0.14"
 serde_json = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-tower-http = { version = "0.6", features = ["trace"] }
+tower-http = { version = "0.6", features = ["trace", "cors"] }
 futures-util = "0.3"
 async-stream = "0.3"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "json"] }

@@ -4,6 +4,7 @@ mod error;
 mod http;
 mod licence;
 mod route;
+mod saas;
 mod sync;
 #[cfg(test)]
 mod test_support;

@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* Same palette as the desktop app (crates/frontend/src/theme/palette.rs). */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-brand: #2f8a63;
+  --color-brand-dark: #26724f;
+  --color-brand-soft: #e4f2ea;
+  --color-gold: #d8bb7e;
+  --color-gold-soft: #f7efdc;
+  --color-cream: #fbf7ef;
+  --color-line: #efe8da;
+  --color-ink: #1f2a26;
+  --color-muted: #8b8f86;
+  --color-danger: #d9534f;
+}
+
+body {
+  background: var(--color-brand);
+  color: var(--color-ink);
+}

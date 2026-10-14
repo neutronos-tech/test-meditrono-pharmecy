@@ -399,3 +399,44 @@ async fn first_device_gets_a_trial_licence_and_second_device_must_pay() {
     assert_eq!(audits, 3);
     db.drop_db().await;
 }
+
+fn signup(username: &str) -> Request<Body> {
+    let body = serde_json::to_vec(&contracts::saas::SignupInput {
+        username: username.into(),
+        password: "long enough".into(),
+    })
+    .unwrap();
+    Request::builder()
+        .method("POST")
+        .uri("/api/v1/auth/signup")
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(body))
+        .unwrap()
+}
+
+#[tokio::test]
+async fn signup_creates_an_account_and_lists_plans_and_devices() {
+    let db = fresh_db().await;
+    let plans = send(&db.app, get("/api/v1/plans", None)).await;
+    assert_eq!(plans.status(), StatusCode::OK);
+    let plans: Vec<contracts::saas::Plan> =
+        serde_json::from_slice(&body_bytes(plans).await).unwrap();
+    assert_eq!(plans[0].code, "standard");
+
+    let response = send(&db.app, signup("Rahman-Pharmacy")).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let login: PharmacyLoginResponse = serde_json::from_slice(&body_bytes(response).await).unwrap();
+    assert_eq!(login.pharmacy.username, "rahman-pharmacy");
+    let again = send(&db.app, signup("rahman-pharmacy")).await;
+    assert_eq!(again.status(), StatusCode::CONFLICT);
+    let bad = send(&db.app, signup("a b")).await;
+    assert_eq!(bad.status(), StatusCode::BAD_REQUEST);
+
+    let renewed = send(&db.app, renew(&login.session_token, "pc-1")).await;
+    assert_eq!(renewed.status(), StatusCode::OK);
+    let devices = send(&db.app, get("/api/v1/devices", Some(&login.session_token))).await;
+    let devices: Vec<contracts::saas::Device> =
+        serde_json::from_slice(&body_bytes(devices).await).unwrap();
+    assert_eq!(devices.len(), 1);
+    db.drop_db().await;
+}

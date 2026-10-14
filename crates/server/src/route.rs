@@ -2,13 +2,18 @@ use crate::{
     app::AppState,
     auth::middleware,
     http::{api, site},
+    saas,
 };
+use axum::http::{HeaderValue, Method, header};
 use axum::{
     Router,
     middleware::from_fn_with_state,
     routing::{get, post},
 };
-use tower_http::trace::TraceLayer;
+use tower_http::{
+    cors::{AllowOrigin, CorsLayer},
+    trace::TraceLayer,
+};
 
 pub fn router(app: AppState) -> Router {
     let browser_routes = Router::new()
@@ -27,6 +32,7 @@ pub fn router(app: AppState) -> Router {
         .route("/api/v1/medicines/changes", get(api::medicine_changes))
         .route("/api/v1/sync", post(api::synchronize))
         .route("/api/v1/licence/renew", post(api::renew_licence))
+        .route("/api/v1/devices", get(saas::devices))
         .route_layer(from_fn_with_state(
             app.clone(),
             middleware::require_api_pharmacy,
@@ -37,8 +43,28 @@ pub fn router(app: AppState) -> Router {
         .route("/health", get(api::health))
         .route("/login", get(site::login_page).post(site::login))
         .route("/api/v1/auth/login", post(api::login))
+        .route("/api/v1/auth/signup", post(saas::signup))
+        .route("/api/v1/plans", get(saas::plans))
         .merge(browser_routes)
         .merge(protected_api)
+        .layer(cors())
         .layer(TraceLayer::new_for_http())
         .with_state(app)
+}
+
+/// The web app runs on another origin (Vercel) and calls the API with a
+/// bearer token, so no cookies cross origins. Allowed origins come from
+/// `PHARMACY_WEB_ORIGINS` (comma-separated); unset means same-origin only.
+fn cors() -> CorsLayer {
+    let origins: Vec<HeaderValue> = std::env::var("PHARMACY_WEB_ORIGINS")
+        .unwrap_or_default()
+        .split(',')
+        .map(str::trim)
+        .filter(|origin| !origin.is_empty())
+        .filter_map(|origin| HeaderValue::from_str(origin).ok())
+        .collect();
+    CorsLayer::new()
+        .allow_origin(AllowOrigin::list(origins))
+        .allow_methods([Method::GET, Method::POST, Method::DELETE])
+        .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
 }

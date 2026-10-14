@@ -1,0 +1,9 @@
+{
+  "name": "Meditrino Pharmacy",
+  "short_name": "Meditrino",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#2F8A63",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
