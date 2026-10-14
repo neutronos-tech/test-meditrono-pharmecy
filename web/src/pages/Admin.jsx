@@ -14,7 +14,7 @@ export default function Admin() {
     setToken(null);
   };
   return (
-    <main className="px-5 pb-16 pt-8 sm:px-10">
+    <main className="px-4 pb-16 pt-8 sm:px-8 lg:px-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Eyebrow>Founder CMS</Eyebrow>
@@ -51,14 +51,14 @@ function AdminLogin({ onDone }) {
     }
   }
   return (
-    <main className="flex justify-center px-5 py-24">
+    <main className="flex justify-center px-4 py-24">
       <form onSubmit={submit} className="w-full max-w-md">
         <Eyebrow>Founder CMS</Eyebrow>
         <h1 className="mt-6 text-4xl font-medium tracking-tight">Owner key</h1>
         <p className="mt-2 text-sm text-muted">Paste the PHARMACY_ADMIN_TOKEN from the server settings.</p>
         <input className={`${field} mt-6`} type="password" value={value} onChange={(e) => setValue(e.target.value)} autoComplete="off" required />
         {error && <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm text-danger">{error}</p>}
-        <button className={`${dark} mt-6 w-full py-3.5`}>Unlock ↗</button>
+        <button className={`${dark} mt-6 w-full py-3.5`}>Unlock</button>
       </form>
     </main>
   );
@@ -91,7 +91,7 @@ function Plans({ onUnauthorized }) {
       {error && <p className="rounded-2xl bg-red-50 p-3 text-sm text-danger">{error}</p>}
       {plans === null && <p className="text-muted">Loading…</p>}
       {plans?.map((plan) => <PlanEditor key={plan.code} plan={plan} onSaved={reload} />)}
-      <details className="rounded-[24px] border border-dashed border-black/20 p-6">
+      <details className="rounded-[2rem] border border-dashed border-black/20 p-6">
         <summary className="cursor-pointer font-medium">+ Add a plan</summary>
         <div className="mt-4"><PlanEditor plan={blank} isNew onSaved={reload} /></div>
       </details>
@@ -125,7 +125,7 @@ function PlanEditor({ plan, isNew, onSaved }) {
   }
   const input = "mt-1 w-full rounded-xl border border-line bg-cream px-3 py-2";
   return (
-    <form onSubmit={save} className={`rounded-[24px] p-6 ${isNew ? "" : "bg-cream/60 border border-line"}`}>
+    <form onSubmit={save} className={`rounded-[2rem] p-6 ${isNew ? "" : "bg-cream/60 border border-line"}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-lg font-medium">{isNew ? "New plan" : `${plan.name} · ${taka(plan.monthly_price_paisa)}/month`}</p>
         {plan.is_default && <span className="rounded-full bg-brand-soft px-3 py-1 text-xs text-brand">Default for new computers</span>}
@@ -164,7 +164,7 @@ function Customers({ onUnauthorized }) {
         {customers === null && <p className="text-muted">Loading…</p>}
         {customers?.length === 0 && <p className="text-muted">No customers found.</p>}
         {customers?.map((customer) => (
-          <div key={customer.id} className="rounded-[24px] border border-line p-5">
+          <div key={customer.id} className="rounded-[2rem] border border-line p-5">
             <button className="flex w-full flex-wrap items-center justify-between gap-3 text-left" onClick={() => setOpenId(openId === customer.id ? null : customer.id)}>
               <div>
                 <p className="text-lg font-medium">{customer.username}</p>
@@ -223,7 +223,7 @@ function CustomerDevices({ pharmacyId, onUnauthorized }) {
 function Audit({ onUnauthorized }) {
   const [entries, error] = useLoad(() => adminApi.audit(), onUnauthorized);
   return (
-    <div className="overflow-x-auto rounded-[24px] border border-line">
+    <div className="overflow-x-auto rounded-[2rem] border border-line">
       {error && <p className="m-4 rounded-2xl bg-red-50 p-3 text-sm text-danger">{error}</p>}
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead className="bg-cream text-xs uppercase tracking-wider text-muted">

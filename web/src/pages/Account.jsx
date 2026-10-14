@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, getToken, setToken } from "../api.js";
-import { Eyebrow, Link, PHOTOS, Photo, SITE, dark, light } from "../ui.jsx";
+import { Phone } from "../Mock.jsx";
+import { Eyebrow, Link, SITE, dark, light } from "../ui.jsx";
 
 export const field = "mt-1 w-full rounded-2xl border border-line bg-cream px-4 py-3 outline-none focus:border-brand";
 
@@ -31,13 +32,12 @@ export function Auth({ mode, go }) {
 
   return (
     <main className="grid gap-3 p-2 sm:p-3 md:grid-cols-2">
-      <Photo src={signup ? PHOTOS.pharmacist : PHOTOS.counsel} alt="" shade className="hidden min-h-[600px] md:block">
-        <div className="flex h-full flex-col justify-end p-10 text-white">
-          <p className="max-w-sm text-3xl font-medium tracking-tight">
-            {signup ? "Your first month is on us." : "Welcome back to the counter."}
-          </p>
-        </div>
-      </Photo>
+      <div className="hidden min-h-[640px] flex-col items-center justify-end overflow-hidden rounded-[2rem] bg-cream px-10 pt-16 md:flex">
+        <p className="max-w-sm text-center text-3xl font-semibold tracking-tight">
+          {signup ? "Your first month is on us." : "Welcome back to the counter."}
+        </p>
+        <Phone className="-mb-24 mt-12 w-[260px]" />
+      </div>
       <form onSubmit={submit} className="flex flex-col justify-center px-4 py-12 sm:px-12">
         <Eyebrow>{signup ? "Create account" : "Sign in"}</Eyebrow>
         <h1 className="mt-6 text-4xl font-medium tracking-tight">{signup ? "Start your free month" : "Sign in"}</h1>
@@ -52,7 +52,7 @@ export function Auth({ mode, go }) {
         </label>
         {error && <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm text-danger">{error}</p>}
         <button disabled={busy} className={`${dark} mt-6 w-full py-3.5 disabled:opacity-60`}>
-          {busy ? "Please wait…" : signup ? "Create account ↗" : "Sign in ↗"}
+          {busy ? "Please wait…" : signup ? "Create account" : "Sign in"}
         </button>
         <p className="mt-6 text-sm text-muted">
           {signup ? "Already have an account? " : "New here? "}
@@ -87,7 +87,7 @@ export function Dashboard({ go }) {
 
   const now = Date.now();
   return (
-    <main className="px-5 pb-16 pt-8 sm:px-10">
+    <main className="px-4 pb-16 pt-8 sm:px-8 lg:px-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Eyebrow>Owner dashboard</Eyebrow>
@@ -98,14 +98,14 @@ export function Dashboard({ go }) {
       {error && <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm text-danger">{error}</p>}
 
       <section className="mt-8 grid gap-3 md:grid-cols-2">
-        <Photo src={PHOTOS.shelves} alt="" shade className="min-h-[260px]">
+        <div className="min-h-[260px] rounded-[2rem] bg-ink">
           <div className="flex h-full flex-col justify-end p-6 text-white">
             <p className="text-2xl font-medium">Install on your shop computer</p>
             <p className="mt-2 max-w-sm text-sm text-white/70">Download, unzip and sign in with this username. Your first computer gets the free month.</p>
-            <a href={SITE.downloadUrl} className={`${light} mt-4 self-start`}>Download for Windows ↗</a>
+            <a href={SITE.downloadUrl} className={`${light} mt-4 self-start`}>Download for Windows</a>
           </div>
-        </Photo>
-        <div className="rounded-[24px] bg-cream p-6">
+        </div>
+        <div className="rounded-[2rem] bg-cream p-6">
           <p className="text-2xl font-medium">Payment</p>
           <p className="mt-2 text-sm text-muted">Online payment with bKash, Nagad and card is coming soon. To continue after your free month, contact us and we'll activate your computer.</p>
           <Link to="/contact" go={go} className={`${dark} mt-6`}>Contact us</Link>
@@ -122,7 +122,7 @@ export function Dashboard({ go }) {
 
 export function DeviceTable({ devices, now, actions }) {
   return (
-    <div className="mt-4 overflow-x-auto rounded-[24px] border border-line">
+    <div className="mt-4 overflow-x-auto rounded-[2rem] border border-line">
       <table className="w-full min-w-[560px] text-left text-sm">
         <thead className="bg-cream text-xs uppercase tracking-wider text-muted">
           <tr>
