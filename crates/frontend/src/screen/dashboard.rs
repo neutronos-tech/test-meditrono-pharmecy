@@ -89,7 +89,11 @@ fn stock_health<'a>(summary: &Dashboard) -> Element<'a, Message> {
             column![
                 text(label).size(typography::SMALL),
                 status_badge::badge(
-                    if value == 0 { "All clear" } else { "Needs attention" },
+                    if value == 0 {
+                        "All clear"
+                    } else {
+                        "Needs attention"
+                    },
                     if value == 0 { Tone::Success } else { tone }
                 )
             ]
@@ -102,8 +106,16 @@ fn stock_health<'a>(summary: &Dashboard) -> Element<'a, Message> {
         column![
             section_title("Stock health"),
             container(ring(healthy, "Well stocked".into(), 170.0)).center_x(Length::Fill),
-            risk(summary.low_stock_medicines, "Low stock medicines", Tone::Warning),
-            risk(summary.near_expiry_batches, "Batches near expiry", Tone::Danger),
+            risk(
+                summary.low_stock_medicines,
+                "Low stock medicines",
+                Tone::Warning
+            ),
+            risk(
+                summary.near_expiry_batches,
+                "Batches near expiry",
+                Tone::Danger
+            ),
         ]
         .spacing(theme::spacing::LG),
     )

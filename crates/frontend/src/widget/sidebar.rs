@@ -189,10 +189,13 @@ pub fn view<'a>(
     let logout = button(if compact {
         Element::from(container(icon(Icon::LogOut, 18.0)).center_x(Length::Fill))
     } else {
-        row![icon(Icon::LogOut, 18.0), text("Sign out").font(font::MEDIUM)]
-            .spacing(theme::spacing::MD)
-            .align_y(Alignment::Center)
-            .into()
+        row![
+            icon(Icon::LogOut, 18.0),
+            text("Sign out").font(font::MEDIUM)
+        ]
+        .spacing(theme::spacing::MD)
+        .align_y(Alignment::Center)
+        .into()
     })
     .style(theme::button::sidebar)
     .padding([theme::spacing::SM + 1.0, theme::spacing::MD])

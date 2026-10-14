@@ -76,8 +76,7 @@ pub fn view(state: &State) -> Element<'_, Message> {
                     .into()
             )
         ),
-        crate::widget::form::search("Search medicines", &state.query)
-            .on_input(Message::Query)
+        crate::widget::form::search("Search medicines", &state.query).on_input(Message::Query)
     ]
     .spacing(theme::spacing::LG);
     if let Some(e) = &state.error {

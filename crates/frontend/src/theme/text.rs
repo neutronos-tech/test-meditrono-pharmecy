@@ -46,7 +46,10 @@ pub fn input(theme: &Theme, status: Status) -> text_input::Style {
         icon: t.text_muted,
         placeholder: t.text_muted,
         value: t.text,
-        selection: iced::Color { a: 0.3, ..t.primary },
+        selection: iced::Color {
+            a: 0.3,
+            ..t.primary
+        },
     };
     match status {
         Status::Active => style,
