@@ -588,3 +588,27 @@ async fn founder_cms_edits_prices_and_activates_devices() {
     assert_eq!(audit[0]["source"], "admin");
     db.drop_db().await;
 }
+
+#[tokio::test]
+async fn migrations_skip_the_hand_applied_baseline_and_run_once() {
+    let db = fresh_db().await;
+    // Production today: first file applied by hand, nothing recorded, no new tables.
+    raw_sql("DROP TABLE pharmacy_schema_migrations; DROP TABLE audit_log; DROP TABLE pharmacy_devices; DROP TABLE pharmacy_plans;")
+        .execute(&db.app.pool)
+        .await
+        .unwrap();
+    crate::migrate::run(&db.app.pool).await.unwrap();
+    crate::migrate::run(&db.app.pool).await.unwrap();
+    let applied: i64 =
+        sqlx_core::query_scalar::query_scalar("SELECT COUNT(*) FROM pharmacy_schema_migrations")
+            .fetch_one(&db.app.pool)
+            .await
+            .unwrap();
+    assert_eq!(applied, 2);
+    let plans: i64 = sqlx_core::query_scalar::query_scalar("SELECT COUNT(*) FROM pharmacy_plans")
+        .fetch_one(&db.app.pool)
+        .await
+        .unwrap();
+    assert_eq!(plans, 1);
+    db.drop_db().await;
+}

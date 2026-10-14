@@ -10,11 +10,6 @@ use std::str::FromStr;
 use uuid::Uuid;
 
 const CATALOG_STANDIN: &str = include_str!("../tests/fixtures/medicine_catalog.sql");
-const PHARMACY_MIGRATION: &str =
-    include_str!("../../../migrations/postgres/20261009_pharmacy_auth_and_sync.sql");
-const LICENCE_MIGRATION: &str =
-    include_str!("../../../migrations/postgres/20261015_devices_plans_licences.sql");
-
 pub struct TestDb {
     pub app: AppState,
     name: String,
@@ -44,14 +39,7 @@ pub async fn fresh_db() -> TestDb {
         .execute(&pool)
         .await
         .expect("apply catalog stand-in");
-    raw_sql(PHARMACY_MIGRATION)
-        .execute(&pool)
-        .await
-        .expect("apply pharmacy migration");
-    raw_sql(LICENCE_MIGRATION)
-        .execute(&pool)
-        .await
-        .expect("apply licence migration");
+    crate::migrate::run(&pool).await.expect("apply migrations");
     let mut app = AppState::from_pool(pool);
     app.licence_key = Some(std::sync::Arc::new(crate::licence::LicenceKey::from_seed(
         1, [9; 32],

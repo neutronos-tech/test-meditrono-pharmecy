@@ -4,6 +4,7 @@ mod auth;
 mod error;
 mod http;
 mod licence;
+mod migrate;
 mod route;
 mod saas;
 mod sync;
@@ -25,6 +26,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut app = AppState::connect(&database_url)
         .await
         .map_err(|_| "Could not connect to PostgreSQL")?;
+    migrate::run(&app.pool)
+        .await
+        .map_err(|error| format!("Database migration failed: {error}"))?;
     if let Ok(key) = std::env::var(licence::KEY_ENV) {
         app.licence_key = Some(std::sync::Arc::new(licence::LicenceKey::parse(&key)?));
     } else {
